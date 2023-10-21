@@ -153,11 +153,10 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 // LLCLOSE
 ////////////////////////////////////////////////
-int llclose(int showStatistics)
+int llclose(int fd)
 {
-
     // UA buffer that is sent as an answer by the receiver
-    unsigned char UA_buffer[1] = {0};   
+    unsigned char DISC_buf[1] = {0};   
 
     /*unsigned char UA_FLAG = 0x7E;
     unsigned char UA_A = 0x03;
@@ -173,7 +172,7 @@ int llclose(int showStatistics)
     while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
     {
         // send SET buffer
-        int bytes = sendSupervisionFrame(fd, A_SET, C_SET);
+        int bytes = sendSupervisionFrame(fd, A_DISC, A_DISC);
         printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
@@ -185,34 +184,34 @@ int llclose(int showStatistics)
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
             
-                int bytes = read(fd, UA_buffer, 1);
+                int bytes = read(fd, DISC_buf, 1);
                 // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
 
                 // state machine
-                switch(UA_buffer[0]) {
-                    case A_UA:  // 0x01
+                switch(DISC_buf[0]) {
+                    case A_DISC:  // 0x03
                         if (state == FLAG)
-                            state = A_UA;
+                            state = A_DISC;
                         else 
                             state = START;
                         break;
 
-                    case C_UA:  //0x07
-                        if (state == A_UA)
-                            state = C_UA;
+                    case C_DISC:  //0x0B
+                        if (state == A_DISC)
+                            state = C_DISC;
                         else 
                             state = START;
                         break;
 
-                    case (BCC1_UA):  //0x01 ^ 0x07
-                        if (state == C_UA)
-                            state = BCC1_UA;  
+                    case (BCC1_DISC):  
+                        if (state == C_DISC)
+                            state = BCC1_DISC;  
                         else
                             state = START;
                         break;
 
                     case FLAG: 
-                        if (state == BCC1_UA) {
+                        if (state == BCC1_DISC) {
                             LINKED = TRUE;
                             state = START;
                             result = 1;
@@ -232,10 +231,10 @@ int llclose(int showStatistics)
             }
         }
     }
+    // send the UA buffer to the receiver
+    sendSupervisionFrame(fd, 0x03, C_UA);
 
     struct termios oldtio;
-
-    // TODO 
     
     // Restore the old port settings
     if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
@@ -245,9 +244,7 @@ int llclose(int showStatistics)
     }
 
     sleep(1);
-    close(fd);
-
-    return result;
+    return close(fd);
 }
 
 // Alarm function handler
@@ -317,4 +314,6 @@ int makeConnection(const char* serialPort) {
     }
 
     printf("New termios structure set\n");
+
+    return fd;
 }

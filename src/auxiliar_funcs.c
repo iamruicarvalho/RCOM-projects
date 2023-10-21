@@ -211,7 +211,7 @@ int linkRx(LinkLayer connection) {
 
     if (LINKED == TRUE) {       // I think this main if belongs to the llread function
       int STOP = FALSE;
-      // unsigned char data[5];
+      unsigned char data[5];
 
       while (STOP == FALSE) {
         int bytes = read(fd, buf, 1);
