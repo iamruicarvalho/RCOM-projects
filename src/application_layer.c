@@ -16,7 +16,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         enumRole = LlRx;
     }
 
-    LinkLayer connectionParameters = {serialPort, role, baudRate, nTries, timeout};
+    LinkLayer connectionParameters = {serialPort, enumRole, baudRate, nTries, timeout};
     
     int result = llopen(connectionParameters);
 
