@@ -3,7 +3,6 @@
 
 #include "link_layer.h"
 
-void alarmHandler(int signal);
 int linkTx(LinkLayer connection);
 int linkRx(LinkLayer connection);
 

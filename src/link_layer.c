@@ -155,12 +155,25 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
 {
+
+    // UA buffer that is sent as an answer by the receiver
+    unsigned char UA_buffer[1] = {0};   
+
+    /*unsigned char UA_FLAG = 0x7E;
+    unsigned char UA_A = 0x03;
+    unsigned char UA_C = 0x07;
+    unsigned char UA_BCC1 = UA_A ^ UA_C;*/
+    unsigned char state = START; 
+
+    int result = -1;
+
     // Set alarm function handler
-    (void)signal(SIGALRM, alarmHandler);
+    (void) signal(SIGALRM, alarmHandler);
 
     while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
     {
-        int bytes = write(fd, SET, 5);
+        // send SET buffer
+        int bytes = sendSupervisionFrame(fd, A_SET, C_SET);
         printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
@@ -177,29 +190,29 @@ int llclose(int showStatistics)
 
                 // state machine
                 switch(UA_buffer[0]) {
-                    case 0x01:  //UA_A
-                        if (state == UA_FLAG)
-                            state = UA_A;
+                    case A_UA:  // 0x01
+                        if (state == FLAG)
+                            state = A_UA;
                         else 
                             state = START;
                         break;
 
-                    case 0x07:  //UA_C
-                        if (state == UA_A)
-                            state = UA_C;
+                    case C_UA:  //0x07
+                        if (state == A_UA)
+                            state = C_UA;
                         else 
                             state = START;
                         break;
 
-                    case (0x03 ^ 0x07):  //UA_BCC1
-                        if (state == UA_C)
-                            state = UA_BCC1;
+                    case (BCC1_UA):  //0x01 ^ 0x07
+                        if (state == C_UA)
+                            state = BCC1_UA;  
                         else
                             state = START;
                         break;
 
-                    case 0x7E:  //UA_FLAG
-                        if (state == UA_BCC1) {
+                    case FLAG: 
+                        if (state == BCC1_UA) {
                             LINKED = TRUE;
                             state = START;
                             result = 1;
@@ -211,7 +224,7 @@ int llclose(int showStatistics)
                             printf("%d SET bytes written\n", bytes);*/
                         }
                         else
-                            state = UA_FLAG;
+                            state = FLAG;
                         break;
                     default:
                         state = START;
@@ -234,5 +247,74 @@ int llclose(int showStatistics)
     sleep(1);
     close(fd);
 
-    return 1;
+    return result;
+}
+
+// Alarm function handler
+void alarmHandler(int signal)
+{
+    alarmEnabled = FALSE;
+    alarmCount++;
+
+    printf("Alarm #%d\n", alarmCount);
+}
+
+int sendSupervisionFrame(int fd, unsigned char A, unsigned char C) {
+    unsigned char BCC1 = A ^ C;
+    unsigned char buffer[5] = {FLAG, A, C, BCC1, FLAG};
+    
+    return write(fd, buffer, 5);
+}
+
+int makeConnection(const char* serialPort) {
+    // Open serial port device for reading and writing, and not as controlling tty
+    // because we don't want to get killed if linenoise sends CTRL-C.
+    int fd = open(serialPort, O_RDWR | O_NOCTTY);
+
+    if (fd < 0)
+    {
+        perror(serialPort);
+        exit(-1);
+    }
+
+    struct termios oldtio;
+    struct termios newtio;
+
+    // Save current port settings
+    if (tcgetattr(fd, &oldtio) == -1)
+    {
+        perror("tcgetattr");
+        exit(-1);
+    }
+
+    // Clear struct for new port settings
+    memset(&newtio, 0, sizeof(newtio));
+
+    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR;
+    newtio.c_oflag = 0;
+
+    // Set input mode (non-canonical, no echo,...)
+    newtio.c_lflag = 0;
+    newtio.c_cc[VTIME] = 0; // Inter-character timer unused
+    newtio.c_cc[VMIN] = 1;  // Blocking read until 5 chars received
+
+    // VTIME e VMIN should be changed in order to protect with a
+    // timeout the reception of the following character(s)
+
+    // Now clean the line and activate the settings for the port
+    // tcflush() discards data written to the object referred to
+    // by fd but not transmitted, or data received but not read,
+    // depending on the value of queue_selector:
+    //   TCIFLUSH - flushes data received but not read.
+    tcflush(fd, TCIOFLUSH);
+
+    // Set new port settings
+    if (tcsetattr(fd, TCSANOW, &newtio) == -1)
+    {
+        perror("tcsetattr");
+        exit(-1);
+    }
+
+    printf("New termios structure set\n");
 }
