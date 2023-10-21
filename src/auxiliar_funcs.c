@@ -1,4 +1,5 @@
 #include "auxiliar_funcs.h"
+#include "link_layer.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -192,95 +193,7 @@ int linkTx(LinkLayer connection) {
             }
         }
     }
-
     return result;
-
-    unsigned char buf[6] ={0};
-    unsigned char F = 0x7E;
-    unsigned char A = 0x03;
-    unsigned char C = 0x00;
-    unsigned char BCC1 = A ^ C;
-    unsigned char BCC2 = ;     // xor of all d's
-
-    buf[0] = F;
-    buf[1] = A;
-    buf[2] = C;
-    buf[3] = BCC1;
-    buf[4] = BCC2;
-    buf[5] = F;
-
-    unsigned char RR1_buffer[1] = {0};   
-    unsigned char state = START; 
-
-    // UA buffer that is sent as an answer by the receiver
-    unsigned char RR1_FLAG = 0x7E;
-    unsigned char RR1_A = 0x03;
-    unsigned char RR1_C = 0x85;
-    unsigned char REJ1_C = 0x81;
-    unsigned char RR1_BCC1 = RR1_A ^ RR1_C;
-
-    // send I(Ns=0) (see how the RR and REJ works)
-    while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
-    {
-        int bytes = write(fd, buf, 6);
-        printf("%d bytes written\n", bytes);
-
-        // Wait until all bytes have been written to the serial port
-        sleep(1);
-        if (alarmEnabled == FALSE)
-        {
-            alarm(connection.timeout); // Set alarm to be triggered in 3s
-            alarmEnabled = TRUE;
-
-            while (STOP == FALSE && alarmEnabled == TRUE) {
-            
-                int bytes = read(fd, RR1_buffer, 1);
-                // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
-
-                // state machine
-                switch(RR1_buffer[0]) {
-                    case 0x03:  //RR1_A
-                        if (state == RR1_FLAG)
-                            state = RR1_A;
-                        else 
-                            state = START;
-                        break;
-
-                    case 0x85:  //RR1_C
-                        if (state == RR1_A)
-                            state = RR1_C;
-                        else 
-                            state = START;
-                        break;
-
-                    case (0x03 ^ 0x85):  //RR1_BCC1
-                        if (state == RR1_C)
-                            state = RR1_BCC1;
-                        else
-                            state = START;
-                        break;
-
-                    case 0x7E:  //RR1_FLAG
-                        if (state == RR1_BCC1) {
-                            LINKED = TRUE;
-                            state = START;
-                            result = 1;
-
-                            printf("Successful reception\n");
-                            alarm(0);   // alarm is disabled   
-
-                            /*int bytes = write(fd, SET, 5);
-                            printf("%d SET bytes written\n", bytes);*/
-                        }
-                        else
-                            state = RR1_FLAG;
-                        break;
-                    default:
-                        state = START;
-                }
-            }
-        }
-    }
 }
 
 // ----------------------------------------------------------------------------------------
@@ -425,7 +338,7 @@ int linkRx(LinkLayer connection) {
         }
     }
 
-    // return result
+    return result
 
     if (LINKED == TRUE) {       // I think this main if belongs to the llread function
       int STOP = FALSE;

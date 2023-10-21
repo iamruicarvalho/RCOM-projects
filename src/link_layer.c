@@ -1,11 +1,33 @@
 // Link layer protocol implementation
-
-#include <termios.h>
-#include "link_layer.h"
-#include "auxiliar_funcs.h"
-
 // MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
+
+#include "auxiliar_funcs.h"
+#include "link_layer.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <termios.h>
+#include <unistd.h>
+#include <signal.h>
+
+// Baudrate settings are defined in <asm/termbits.h>, which is
+// included by <termios.h>
+#define BAUDRATE B38400
+#define _POSIX_SOURCE 1 // POSIX compliant source
+
+#define FALSE 0
+#define TRUE 1
+#define BUF_SIZE 256
+
+volatile int STOP = FALSE;
+volatile int LINKED = FALSE;
+int alarmEnabled = FALSE;
+int alarmCount = 0;
+unsigned char START = 0xFF;
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -29,8 +51,92 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    // TODO
+    unsigned char I0_buf[6] ={0};
+    unsigned char F = 0x7E;
+    unsigned char A = 0x03;
+    unsigned char C = 0x00;
+    unsigned char BCC1 = A ^ C;
+    unsigned char BCC2 = ;     // xor of all d's
 
+    I0_buf[0] = F;
+    I0_buf[1] = A;
+    I0_buf[2] = C;
+    I0_buf[3] = BCC1;
+    I0_buf[4] = BCC2;
+    I0_buf[5] = F;
+
+    unsigned char RR1_buffer[1] = {0};   
+    unsigned char state = START; 
+
+    // UA buffer that is sent as an answer by the receiver
+    unsigned char RR1_FLAG = 0x7E;
+    unsigned char RR1_A = 0x03;
+    unsigned char RR1_C = 0x85;
+    unsigned char REJ1_C = 0x81;
+    unsigned char RR1_BCC1 = RR1_A ^ RR1_C;
+
+    // send I(Ns=0) (see how the RR and REJ works)
+    while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
+    {
+        int bytes = write(fd, buf, 6);
+        printf("%d bytes written\n", bytes);
+
+        // Wait until all bytes have been written to the serial port
+        sleep(1);
+        if (alarmEnabled == FALSE)
+        {
+            alarm(connection.timeout); // Set alarm to be triggered in 3s
+            alarmEnabled = TRUE;
+
+            while (STOP == FALSE && alarmEnabled == TRUE) {
+            
+                int bytes = read(fd, RR1_buffer, 1);
+                // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
+
+                // state machine
+                switch(RR1_buffer[0]) {
+                    case 0x03:  //RR1_A
+                        if (state == RR1_FLAG)
+                            state = RR1_A;
+                        else 
+                            state = START;
+                        break;
+
+                    case 0x85:  //RR1_C
+                        if (state == RR1_A)
+                            state = RR1_C;
+                        else 
+                            state = START;
+                        break;
+
+                    case (0x03 ^ 0x85):  //RR1_BCC1
+                        if (state == RR1_C)
+                            state = RR1_BCC1;
+                        else
+                            state = START;
+                        break;
+
+                    case 0x7E:  //RR1_FLAG
+                        if (state == RR1_BCC1) {
+                            LINKED = TRUE;
+                            state = START;
+                            result = 1;
+
+                            printf("Successful reception\n");
+                            alarm(0);   // alarm is disabled   
+
+                            /*int bytes = write(fd, SET, 5);
+                            printf("%d SET bytes written\n", bytes);*/
+                        }
+                        else
+                            state = RR1_FLAG;
+                        break;
+                    default:
+                        state = START;
+                }
+            }
+        }
+    }
     return 0;
 }
 
@@ -49,7 +155,71 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
 {
-    
+    // Set alarm function handler
+    (void)signal(SIGALRM, alarmHandler);
+
+    while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
+    {
+        int bytes = write(fd, SET, 5);
+        printf("%d bytes written\n", bytes);
+
+        // Wait until all bytes have been written to the serial port
+        sleep(1);
+        if (alarmEnabled == FALSE)
+        {
+            alarm(connection.timeout); // Set alarm to be triggered in 3s
+            alarmEnabled = TRUE;
+
+            while (STOP == FALSE && alarmEnabled == TRUE) {
+            
+                int bytes = read(fd, UA_buffer, 1);
+                // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
+
+                // state machine
+                switch(UA_buffer[0]) {
+                    case 0x01:  //UA_A
+                        if (state == UA_FLAG)
+                            state = UA_A;
+                        else 
+                            state = START;
+                        break;
+
+                    case 0x07:  //UA_C
+                        if (state == UA_A)
+                            state = UA_C;
+                        else 
+                            state = START;
+                        break;
+
+                    case (0x03 ^ 0x07):  //UA_BCC1
+                        if (state == UA_C)
+                            state = UA_BCC1;
+                        else
+                            state = START;
+                        break;
+
+                    case 0x7E:  //UA_FLAG
+                        if (state == UA_BCC1) {
+                            LINKED = TRUE;
+                            state = START;
+                            result = 1;
+
+                            printf("Successful reception\n");
+                            alarm(0);   // alarm is disabled   
+
+                            /*int bytes = write(fd, SET, 5);
+                            printf("%d SET bytes written\n", bytes);*/
+                        }
+                        else
+                            state = UA_FLAG;
+                        break;
+                    default:
+                        state = START;
+                }
+            }
+        }
+    }
+
     struct termios oldtio;
 
     // TODO 
