@@ -65,8 +65,8 @@ int llwrite(const unsigned char *buf, int bufSize)
     I0_buf[4] = BCC2;
     I0_buf[5] = F;
 
-    unsigned char RR1_buffer[1] = {0};   
-    unsigned char state = START; 
+    unsigned char RR1_buffer[1] = {0};
+    unsigned char state = START;
 
     // UA buffer that is sent as an answer by the receiver
     unsigned char RR1_FLAG = 0x7E;
@@ -89,7 +89,7 @@ int llwrite(const unsigned char *buf, int bufSize)
             alarmEnabled = TRUE;
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
-            
+
                 int bytes = read(fd, RR1_buffer, 1);
                 // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
 
@@ -98,14 +98,14 @@ int llwrite(const unsigned char *buf, int bufSize)
                     case 0x03:  //RR1_A
                         if (state == RR1_FLAG)
                             state = RR1_A;
-                        else 
+                        else
                             state = START;
                         break;
 
                     case 0x85:  //RR1_C
                         if (state == RR1_A)
                             state = RR1_C;
-                        else 
+                        else
                             state = START;
                         break;
 
@@ -123,7 +123,7 @@ int llwrite(const unsigned char *buf, int bufSize)
                             result = 1;
 
                             printf("Successful reception\n");
-                            alarm(0);   // alarm is disabled   
+                            alarm(0);   // alarm is disabled
 
                             /*int bytes = write(fd, SET, 5);
                             printf("%d SET bytes written\n", bytes);*/
@@ -156,13 +156,13 @@ int llread(unsigned char *packet)
 int llclose(int fd)
 {
     // UA buffer that is sent as an answer by the receiver
-    unsigned char DISC_buf[1] = {0};   
+    unsigned char DISC_buf[1] = {0};
 
     /*unsigned char UA_FLAG = 0x7E;
     unsigned char UA_A = 0x03;
     unsigned char UA_C = 0x07;
     unsigned char UA_BCC1 = UA_A ^ UA_C;*/
-    unsigned char state = START; 
+    unsigned char state = START;
 
     int result = -1;
 
@@ -183,7 +183,7 @@ int llclose(int fd)
             alarmEnabled = TRUE;
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
-            
+
                 int bytes = read(fd, DISC_buf, 1);
                 // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
 
@@ -192,32 +192,32 @@ int llclose(int fd)
                     case A_DISC:  // 0x03
                         if (state == FLAG)
                             state = A_DISC;
-                        else 
+                        else
                             state = START;
                         break;
 
                     case C_DISC:  //0x0B
                         if (state == A_DISC)
                             state = C_DISC;
-                        else 
-                            state = START;
-                        break;
-
-                    case (BCC1_DISC):  
-                        if (state == C_DISC)
-                            state = BCC1_DISC;  
                         else
                             state = START;
                         break;
 
-                    case FLAG: 
+                    case (BCC1_DISC):
+                        if (state == C_DISC)
+                            state = BCC1_DISC;
+                        else
+                            state = START;
+                        break;
+
+                    case FLAG:
                         if (state == BCC1_DISC) {
                             LINKED = TRUE;
                             state = START;
                             result = 1;
 
                             printf("Successful reception\n");
-                            alarm(0);   // alarm is disabled   
+                            alarm(0);   // alarm is disabled
 
                             /*int bytes = write(fd, SET, 5);
                             printf("%d SET bytes written\n", bytes);*/
@@ -235,7 +235,7 @@ int llclose(int fd)
     sendSupervisionFrame(fd, 0x03, C_UA);
 
     struct termios oldtio;
-    
+
     // Restore the old port settings
     if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
     {
@@ -245,75 +245,4 @@ int llclose(int fd)
 
     sleep(1);
     return close(fd);
-}
-
-// Alarm function handler
-void alarmHandler(int signal)
-{
-    alarmEnabled = FALSE;
-    alarmCount++;
-
-    printf("Alarm #%d\n", alarmCount);
-}
-
-int sendSupervisionFrame(int fd, unsigned char A, unsigned char C) {
-    unsigned char BCC1 = A ^ C;
-    unsigned char buffer[5] = {FLAG, A, C, BCC1, FLAG};
-    
-    return write(fd, buffer, 5);
-}
-
-int makeConnection(const char* serialPort) {
-    // Open serial port device for reading and writing, and not as controlling tty
-    // because we don't want to get killed if linenoise sends CTRL-C.
-    int fd = open(serialPort, O_RDWR | O_NOCTTY);
-
-    if (fd < 0)
-    {
-        perror(serialPort);
-        exit(-1);
-    }
-
-    struct termios oldtio;
-    struct termios newtio;
-
-    // Save current port settings
-    if (tcgetattr(fd, &oldtio) == -1)
-    {
-        perror("tcgetattr");
-        exit(-1);
-    }
-
-    // Clear struct for new port settings
-    memset(&newtio, 0, sizeof(newtio));
-
-    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-    newtio.c_iflag = IGNPAR;
-    newtio.c_oflag = 0;
-
-    // Set input mode (non-canonical, no echo,...)
-    newtio.c_lflag = 0;
-    newtio.c_cc[VTIME] = 0; // Inter-character timer unused
-    newtio.c_cc[VMIN] = 1;  // Blocking read until 5 chars received
-
-    // VTIME e VMIN should be changed in order to protect with a
-    // timeout the reception of the following character(s)
-
-    // Now clean the line and activate the settings for the port
-    // tcflush() discards data written to the object referred to
-    // by fd but not transmitted, or data received but not read,
-    // depending on the value of queue_selector:
-    //   TCIFLUSH - flushes data received but not read.
-    tcflush(fd, TCIOFLUSH);
-
-    // Set new port settings
-    if (tcsetattr(fd, TCSANOW, &newtio) == -1)
-    {
-        perror("tcsetattr");
-        exit(-1);
-    }
-
-    printf("New termios structure set\n");
-
-    return fd;
 }
