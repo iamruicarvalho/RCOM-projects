@@ -207,6 +207,7 @@ int linkRx(LinkLayer connection) {
 
     return result;
 
+    // ------------------------------------------
     if (LINKED == TRUE) {       // I think this main if belongs to the llread function
       int STOP = FALSE;
       unsigned char data[5];
@@ -269,54 +270,7 @@ int linkRx(LinkLayer connection) {
             }
         }
       }
-        /*switch (buf[0]) {
-          case 0x03:  // can be A or C
-            if (state == FLAG) {
-              state = A;
-            }
-            else if (state == A) {
-              state = C;
-            }
-            else {
-              // process data
-            }
-            break;
-
-          case 0x00:  // BCC1
-            if (state == C) {
-              state = BCC1;
-            }
-            else {
-              // process data
-            }
-            break;
-
-          case 0x01:  // BCC2 -------- to check
-            if (state == BCC1) {
-              state = BCC2;
-            }
-            else {
-              // process data
-            }
-            break;
-
-          case 0x7E:  // FLAG
-            if (state == BCC2) {
-              STOP = TRUE;    // ends the loop
-              state = START;
-
-            }
-            else {
-              state = FLAG;
-            }
-            break;
-          default:
-            if (state == BCC1) {
-              // process data
-            }
-        }
-      }*/
-    }
+    } // ------------------------------------------------
 }
 
 // ----------------------------------------------------------------------------------------

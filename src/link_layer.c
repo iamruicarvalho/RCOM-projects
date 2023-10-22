@@ -27,6 +27,8 @@ volatile int STOP = FALSE;
 volatile int LINKED = FALSE;
 int alarmEnabled = FALSE;
 int alarmCount = 0;
+int timeout = 0;
+int retransmissions = 0;
 unsigned char START = 0xFF;
 
 ////////////////////////////////////////////////
@@ -35,6 +37,8 @@ unsigned char START = 0xFF;
 int llopen(LinkLayer connectionParameters)
 {
     int result;
+    int timeout = connectionParameters.timeout;
+    int retransmissions = connectionParameters.nRetransmissions;
 
     if (connectionParameters.role == LlTx) {
         result = linkTx(connectionParameters);
@@ -169,7 +173,7 @@ int llclose(int fd)
     // Set alarm function handler
     (void) signal(SIGALRM, alarmHandler);
 
-    while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
+    while (alarmCount < retransmissions && LINKED == FALSE)
     {
         // send SET buffer
         int bytes = sendSupervisionFrame(fd, A_DISC, A_DISC);
@@ -179,7 +183,7 @@ int llclose(int fd)
         sleep(1);
         if (alarmEnabled == FALSE)
         {
-            alarm(connection.timeout); // Set alarm to be triggered in 3s
+            alarm(timeout); // Set alarm to be triggered in 3s
             alarmEnabled = TRUE;
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
