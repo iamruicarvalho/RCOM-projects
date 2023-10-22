@@ -27,13 +27,12 @@ unsigned char START = 0xFF;
 
 
 int linkTx(LinkLayer connection) {
-    
+
     // open serial port
     int fd = makeConnection(connection.serialPort);
-    if (fd < 0) 
+    if (fd < 0)
       return -1;
 
-  
     // SET buffer to send
     /*unsigned char SET[5] = {0};
     unsigned char F = 0x7E;
@@ -52,15 +51,15 @@ int linkTx(LinkLayer connection) {
     // The whole buffer must be sent even with the '\n'.
     // buf[5] = '\n';
 
-    
+
     // UA buffer that is sent as an answer by the receiver
-    unsigned char UA_buffer[1] = {0};   
+    unsigned char UA_buffer[1] = {0};
 
     /*unsigned char UA_FLAG = 0x7E;
     unsigned char UA_A = 0x03;
     unsigned char UA_C = 0x07;
     unsigned char UA_BCC1 = UA_A ^ UA_C;*/
-    unsigned char state = START; 
+    unsigned char state = START;
 
     int result = -1;
 
@@ -81,7 +80,7 @@ int linkTx(LinkLayer connection) {
             alarmEnabled = TRUE;
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
-            
+
                 int bytes = read(fd, UA_buffer, 1);
                 // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
 
@@ -90,32 +89,32 @@ int linkTx(LinkLayer connection) {
                     case A_UA:  // 0x01
                         if (state == FLAG)
                             state = A_UA;
-                        else 
+                        else
                             state = START;
                         break;
 
                     case C_UA:  //0x07
                         if (state == A_UA)
                             state = C_UA;
-                        else 
+                        else
                             state = START;
                         break;
 
                     case (BCC1_UA):  //0x01 ^ 0x07
                         if (state == C_UA)
-                            state = BCC1_UA;  
+                            state = BCC1_UA;
                         else
                             state = START;
                         break;
 
-                    case FLAG: 
+                    case FLAG:
                         if (state == BCC1_UA) {
                             LINKED = TRUE;
                             state = START;
                             result = 1;
 
                             printf("Successful reception\n");
-                            alarm(0);   // alarm is disabled   
+                            alarm(0);   // alarm is disabled
 
                             /*int bytes = write(fd, SET, 5);
                             printf("%d SET bytes written\n", bytes);*/
@@ -137,10 +136,10 @@ int linkTx(LinkLayer connection) {
 // ----------------------------------------------------------------------------------------
 
 int linkRx(LinkLayer connection) {
-    
+
     // open serial port
     int fd = makeConnection(connection.serialPort);
-    if (fd < 0) 
+    if (fd < 0)
       return -1;
 
 
@@ -148,7 +147,7 @@ int linkRx(LinkLayer connection) {
     unsigned char A = 0x03;
     unsigned char C = 0x03;
     unsigned char BCC1 = A ^ C;*/
-       
+
     // Loop for input
     unsigned char buf[1] = {0}; // +1: Save space for the final '\0' char
     unsigned char state = START;
@@ -161,7 +160,7 @@ int linkRx(LinkLayer connection) {
         // Returns after 5 chars have been input
         int bytes = read(fd, buf, 1);
         //buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
-        
+
         printf("Message received: 0x%02X \n Bytes read:%d\n", buf[0], bytes);
         //printf("buf = 0x%02X\n", (unsigned int)(buf & 0xFF));
 
@@ -177,8 +176,8 @@ int linkRx(LinkLayer connection) {
                 state = START;
               }
               break;
-              
-            case (BCC1_SET):  
+
+            case (BCC1_SET):
               if (state == C_SET) {
                 state = BCC1_SET;
               }
@@ -186,8 +185,8 @@ int linkRx(LinkLayer connection) {
                 state = START;
               }
               break;
-              
-            case FLAG: 
+
+            case FLAG:
               if (state == BCC1_SET) {
                 LINKED = TRUE;    // ends the main loop
                 state = START;
@@ -215,9 +214,9 @@ int linkRx(LinkLayer connection) {
 
       while (STOP == FALSE) {
         int bytes = read(fd, buf, 1);
-        unsigned char A = 0x03;  
-        unsigned char C = 0x00;  
-        unsigned char BCC1 = A ^ C;   
+        unsigned char A = 0x03;
+        unsigned char C = 0x00;
+        unsigned char BCC1 = A ^ C;
         // unsigned char BCC2 = ;   xor of all d's
         switch (buf[0]) {               // need to check the state machine with juani
           case 0x03:  // can be A or C
@@ -237,7 +236,7 @@ int linkRx(LinkLayer connection) {
               // process data
             }
             break;
-            
+
           case (0x03 ^ 0x00):  // BCC1
             if (state == C) {
               state = BCC1;
@@ -255,7 +254,7 @@ int linkRx(LinkLayer connection) {
               // process data
             }
             break;
-            
+
           case 0x7E:  // FLAG
             if (state == BCC2) {
               LINKED = TRUE;    // ends the loop
@@ -270,7 +269,7 @@ int linkRx(LinkLayer connection) {
               // process data
             }
         }
-      }                     
+      }
         /*switch (buf[0]) {
           case 0x03:  // can be A or C
             if (state == FLAG) {
@@ -283,7 +282,7 @@ int linkRx(LinkLayer connection) {
               // process data
             }
             break;
-            
+
           case 0x00:  // BCC1
             if (state == C) {
               state = BCC1;
@@ -301,12 +300,12 @@ int linkRx(LinkLayer connection) {
               // process data
             }
             break;
-            
+
           case 0x7E:  // FLAG
             if (state == BCC2) {
               STOP = TRUE;    // ends the loop
               state = START;
-              
+
             }
             else {
               state = FLAG;
