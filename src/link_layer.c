@@ -28,6 +28,8 @@ int alarmCount = 0;
 int timeout = 0;
 int retransmissions = 0;
 unsigned char START = 0xFF;
+unsigned char tramaTx = 0;
+unsigned char tramaRx = 1;
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -53,21 +55,30 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    unsigned char I0_buf[6] ={0};
-    unsigned char F = 0x7E;
-    unsigned char A = 0x03;
-    unsigned char C = 0x00;
-    unsigned char BCC1 = A ^ C;
-    unsigned char BCC2 = ;     // xor of all d's
+    unsigned char* I_buf = (unsigned char*) malloc(bufSize + 6);
+    I_buf[0] = FLAG;
+    I_buf[1] = 0x03;
+    I_buf[2] = C_N(tramaTx);
+    I_buf[3] = I_buf[1] ^ I_buf[2];
 
-    I0_buf[0] = F;
-    I0_buf[1] = A;
-    I0_buf[2] = C;
-    I0_buf[3] = BCC1;
-    I0_buf[4] = BCC2;
-    I0_buf[5] = F;
+    // copy the content of buf to the next position of I_buf
+    unsigned char* currPosition = I_buf + 4;
+    memcpy(currPosition, buf, bufSize);    
 
-    unsigned char RR1_buffer[1] = {0};
+    // building BCC2: xor of all D's
+    unsigned char BCC2 = buf[0];
+    for (unsigned int i = 1 ; i < bufSize ; i++) 
+        BCC2 ^= buf[i];
+
+    unsigned char nextPosition = currPosition++;
+    unsigned char finalPosition = nextPosition++;
+    I_buf[nextPosition] = BCC2;
+    I_buf[finalPosition] = FLAG;
+
+
+    
+
+    /*unsigned char RR1_buffer[1] = {0};
     unsigned char state = START;
 
     // UA buffer that is sent as an answer by the receiver
@@ -75,7 +86,10 @@ int llwrite(const unsigned char *buf, int bufSize)
     unsigned char RR1_A = 0x03;
     unsigned char RR1_C = 0x85;
     unsigned char REJ1_C = 0x81;
-    unsigned char RR1_BCC1 = RR1_A ^ RR1_C;
+    unsigned char RR1_BCC1 = RR1_A ^ RR1_C;*/
+    //-------------------------------------------------------
+
+
 
     // send I(Ns=0) (see how the RR and REJ works)
     while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
