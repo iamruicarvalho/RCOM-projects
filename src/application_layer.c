@@ -8,7 +8,6 @@
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
-    
     LinkLayerRole enumRole;
     if (strcmp(role, "tx") == 0) {
         enumRole = LlTx;
@@ -17,31 +16,42 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     }
 
     LinkLayer connectionParameters = {serialPort, enumRole, baudRate, nTries, timeout};
-    
-    int result = llopen(connectionParameters);
 
-    if (result == 1) {
+    int openResult = llopen(connectionParameters);
+
+    if (openResult == 1) {
+        FILE* file;
 
         if (enumRole == LlTx) {
-            FILE* file;
-            file = fopen(filename,"rb");
 
-            int size = sizeof(file);
-            const unsigned char* buf = malloc(size);
-            fread(buf, size, 1, file);
+            file = fopen(filename,"rb");    //
+            const unsigned char* buf;       // maybe this can be done inside llwrite
+            fread(buf, size, 1, file);      //
 
-            int bytes = llwrite(buf, size);       // to check
-            printf("%i bytes written", bytes);
+            int bytes = llwrite(buf, size);
+            printf("%i bytes written", bytes);    // only for debugging
 
-        } else {
+        } else {  // enumRole == LlRx
 
-            // TODO
+          unsigned char* packet;      // not sure where this should come from
+          int bytes = llread(packet);
+          printf("%i bytes read", bytes);    // only for debugging
 
-        } 
-        
+        }
+
+        int showStatistics = FALSE;
+        int closeResult = llclose(showStatistics);
+        fclose(file);
+
+        if (closeResult == 1) {
+          printf("Connection closed successfuly");
+        }
+        else
+          printf("An error occurred while closing the connection");
 
     } else {
-        printf("An error occurred in the linking process");
+        printf("An error occurred in the linking process. Terminating the
+          program");
     }
 
 }

@@ -4,18 +4,6 @@
 #ifndef _LINK_LAYER_H_
 #define _LINK_LAYER_H_
 
-#define FLAG       0x7E
-#define A_SET      0x03
-#define C_SET      0x03
-#define BCC1_SET   (A_SET ^ C_SET)
-#define A_UA       0x01
-#define C_UA       0x07
-#define BCC1_UA    (A_UA ^ C_UA)
-#define A_DISC     0x03
-#define C_DISC     0x0B
-#define BCC1_DISC  (A_DISC ^ C_DISC)
-
-
 typedef enum
 {
     LlTx,
@@ -55,9 +43,5 @@ int llread(unsigned char *packet);
 // if showStatistics == TRUE, link layer should print statistics in the console on close.
 // Return "1" on success or "-1" on error.
 int llclose(int showStatistics);
-
-void alarmHandler(int signal);
-int makeConnection(const char* serialPort);
-int sendSupervisionFrame(int fd, unsigned char A, unsigned char C);
 
 #endif // _LINK_LAYER_H_
