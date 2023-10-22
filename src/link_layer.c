@@ -19,8 +19,6 @@
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
-#define FALSE 0
-#define TRUE 1
 #define BUF_SIZE 256
 
 volatile int STOP = FALSE;
@@ -145,7 +143,10 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-    // TODO
+  file = fopen(filename,"w");
+  fwrite(packet, size, 1, file);
+
+  // TODO
 
     return 0;
 }
