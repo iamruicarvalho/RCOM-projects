@@ -150,6 +150,68 @@ int llread(unsigned char *packet)
   file = fopen(filename,"w");
   fwrite(packet, size, 1, file);
 
+    int STOP = FALSE;
+    unsigned char data[5];
+
+    while (STOP == FALSE) {
+        int bytes = read(fd, buf, 1);
+        unsigned char A = 0x03;
+        unsigned char C = 0x00;
+        unsigned char BCC1 = A ^ C;
+        // unsigned char BCC2 = ;   xor of all d's
+        switch (buf[0]) {               // need to check the state machine with juani
+            case 0x03:  // can be A or C
+                if (state == FLAG) {
+                    state = A;
+                }
+                else {
+                // process data
+                }
+                break;
+
+            case 0x00:
+                if (state == A) {
+                    state = C;
+                }
+                else {
+                    // process data
+                }
+                break;
+
+            case (0x03 ^ 0x00):  // BCC1
+                if (state == C) {
+                    state = BCC1;
+                }
+                else {
+                    // process data
+                }
+                break;
+
+            //case (xor of all d's):  // BCC2 -------- to check
+                if (state == BCC1) {
+                    state = BCC2;
+                }
+                else {
+                    // process data
+                }
+                break;
+
+            case 0x7E:  // FLAG
+                if (state == BCC2) {
+                    LINKED = TRUE;    // ends the loop
+                    state = START;
+                }
+                else {
+                    state = FLAG;
+                }
+                break;
+            default:
+                if (state == BCC1) {
+                    // process data
+                }
+        }
+    }
+
   // TODO
 
     return 0;

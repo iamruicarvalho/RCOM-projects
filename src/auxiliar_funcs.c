@@ -33,19 +33,6 @@ int linkTx(LinkLayer connection) {
     if (fd < 0)
       return -1;
 
-    // SET buffer to send
-    /*unsigned char SET[5] = {0};
-    unsigned char F = 0x7E;
-    unsigned char A = 0x03;
-    unsigned char C = 0x03;
-    unsigned char BCC1 = A ^ C;
-
-    SET[0] = F;
-    SET[1] = A;
-    SET[2] = C;
-    SET[3] = BCC1;
-    SET[4] = F;*/
-
     // In non-canonical mode, '\n' does not end the writing.
     // Test this condition by placing a '\n' in the middle of the buffer.
     // The whole buffer must be sent even with the '\n'.
@@ -141,26 +128,17 @@ int linkRx(LinkLayer connection) {
     if (fd < 0)
       return -1;
 
-
-    /*unsigned char FLAG = 0x7E;
-    unsigned char A = 0x03;
-    unsigned char C = 0x03;
-    unsigned char BCC1 = A ^ C;*/
-
-    // Loop for input
-    unsigned char buf[1] = {0}; // +1: Save space for the final '\0' char
+    unsigned char buf[1];
     unsigned char state = START;
-
     int result = -1;
 
     // STATE MACHINE
-    while (LINKED == FALSE)
+    while (STOP == FALSE)
     {
-        // Returns after 5 chars have been input
+        // Returns after 1 char has been input
         int bytes = read(fd, buf, 1);
-        //buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
 
-        printf("Message received: 0x%02X \n Bytes read:%d\n", buf[0], bytes);
+        printf("Message received: 0x%02X \n Bytes read:%d\n", buf[0], bytes);   // only for debugging
         //printf("buf = 0x%02X\n", (unsigned int)(buf & 0xFF));
 
         switch (buf[0]) {
@@ -187,7 +165,7 @@ int linkRx(LinkLayer connection) {
 
             case FLAG:
               if (state == BCC1_SET) {
-                LINKED = TRUE;    // ends the main loop
+                STOP = TRUE;
                 state = START;
                 printf("Succesful reception of SET message");
                 result = 1;
@@ -207,70 +185,6 @@ int linkRx(LinkLayer connection) {
 
     return result;
 
-    // ------------------------------------------
-    if (LINKED == TRUE) {       // I think this main if belongs to the llread function
-      int STOP = FALSE;
-      unsigned char data[5];
-
-      while (STOP == FALSE) {
-        int bytes = read(fd, buf, 1);
-        unsigned char A = 0x03;
-        unsigned char C = 0x00;
-        unsigned char BCC1 = A ^ C;
-        // unsigned char BCC2 = ;   xor of all d's
-        switch (buf[0]) {               // need to check the state machine with juani
-          case 0x03:  // can be A or C
-            if (state == FLAG) {
-              state = A;
-            }
-            else {
-                // process data
-            }
-            break;
-
-          case 0x00:
-            if (state == A) {
-              state = C;
-            }
-            else {
-              // process data
-            }
-            break;
-
-          case (0x03 ^ 0x00):  // BCC1
-            if (state == C) {
-              state = BCC1;
-            }
-            else {
-              // process data
-            }
-            break;
-
-        //case (xor of all d's):  // BCC2 -------- to check
-            if (state == BCC1) {
-              state = BCC2;
-            }
-            else {
-              // process data
-            }
-            break;
-
-          case 0x7E:  // FLAG
-            if (state == BCC2) {
-              LINKED = TRUE;    // ends the loop
-              state = START;
-            }
-            else {
-              state = FLAG;
-            }
-            break;
-          default:
-            if (state == BCC1) {
-              // process data
-            }
-        }
-      }
-    } // ------------------------------------------------
 }
 
 // ----------------------------------------------------------------------------------------
