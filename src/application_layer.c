@@ -16,6 +16,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     }
 
     LinkLayer connectionParameters = {serialPort, enumRole, baudRate, nTries, timeout};
+    strcpy(connectionParameters.serialPort, serialPort);
 
     int openResult = llopen(connectionParameters);
 
@@ -24,9 +25,14 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
         if (enumRole == LlTx) {
 
-            file = fopen(filename,"rb");    //
-            const unsigned char* buf;       // maybe this can be done inside llwrite
-            fread(buf, size, 1, file);      //
+            file = fopen(filename,"rb");    
+            if (file == NULL) {             
+                perror("File not found\n"); 
+                exit(-1);
+            }   
+            
+            const unsigned char* buf;       
+            fread(buf, size, 1, file);      
 
             int bytes = llwrite(buf, size);
             printf("%i bytes written", bytes);    // only for debugging

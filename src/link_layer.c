@@ -147,11 +147,10 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-  file = fopen(filename,"w");
-  fwrite(packet, size, 1, file);
+    file = fopen(filename,"w");
+    fwrite(packet, size, 1, file);
 
     int STOP = FALSE;
-    unsigned char data[5];
 
     while (STOP == FALSE) {
         int bytes = read(fd, buf, 1);
