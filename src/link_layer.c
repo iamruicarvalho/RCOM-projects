@@ -152,16 +152,19 @@ int llread(unsigned char *packet)
     while (state != STOP_R) {  
         
         switch (state) {
+
             case START_TX:
                 if (buf == FLAG) 
                     state = FLAG_RCV;
                 break;
+
             case FLAG_RCV:
                 if (buf == A_ER) 
                     state = A_RCV;
                 else if (buf != FLAG)   
                     state = START_TX;
                 break;
+
             case A_RCV:
                 if (buf == C_N(0) || buf == C_N(1)) {
                     state = C_RCV;
@@ -176,6 +179,7 @@ int llread(unsigned char *packet)
                 else 
                     state = START;
                 break;
+
             case C_RCV:
                 if (buf == (A_ER ^ cField)) 
                     state = READING_DATA;
@@ -184,38 +188,42 @@ int llread(unsigned char *packet)
                 else 
                     state = START;
                 break;
+
             case READING_DATA:
-                if (buf == ESC) state = DATA_FOUND_ESC;
-                else if (buf == FLAG){
+                if (buf == ESC) 
+                    state = DATA_FOUND_ESC;
+                else if (buf == FLAG) {
                     unsigned char bcc2 = packet[i-1];
                     i--;
-                    packet[i] = '\0';
+                    packet[i] = '\0';   // check if it is necessary
                     unsigned char acc = packet[0];
 
                     for (unsigned int j = 1; j < i; j++)
                         acc ^= packet[j];
 
-                    if (bcc2 == acc){
+                    if (bcc2 == acc) {
                         state = STOP_R;
                         sendSupervisionFrame(fd, A_RE, C_RR(tramaRx));
-                        tramaRx = (tramaRx + 1)%2;
-                        return i; 
+                        tramaRx = (tramaRx + 1) % 2;
+                        return i;   // amount of bytes read
                     }
-                    else{
-                        printf("Error: retransmition\n");
+                    else {
+                        printf("An error ocurred, sending RREJ\n");
                         sendSupervisionFrame(fd, A_RE, C_REJ(tramaRx));
                         return -1;
                     };
 
                 }
-                else{
+                else {
                     packet[i++] = buf;
                 }
                 break;
+
             case DATA_FOUND_ESC:
                 state = READING_DATA;
-                if (buf == ESC || buf == FLAG) packet[i++] = buf;
-                else{
+                if (buf == ESC || buf == FLAG) 
+                    packet[i++] = buf;
+                else {
                     packet[i++] = ESC;
                     packet[i++] = buf;
                 }
