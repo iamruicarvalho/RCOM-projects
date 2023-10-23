@@ -41,10 +41,6 @@ int linkTx(LinkLayer connection) {
     // UA buffer that is sent as an answer by the receiver
     unsigned char UA_buffer[1] = {0};
 
-    /*unsigned char UA_FLAG = 0x7E;
-    unsigned char UA_A = 0x03;
-    unsigned char UA_C = 0x07;
-    unsigned char UA_BCC1 = UA_A ^ UA_C;*/
     unsigned char state = START;
 
     int result = -1;
@@ -128,7 +124,8 @@ int linkRx(LinkLayer connection) {
     if (fd < 0)
       return -1;
 
-    unsigned char buf[1];
+    // Loop for input
+    unsigned char buf[1] = {0}; // +1: Save space for the final '\0' char
     unsigned char state = START;
     int result = -1;
 
@@ -184,7 +181,6 @@ int linkRx(LinkLayer connection) {
     }
 
     return result;
-
 }
 
 // ----------------------------------------------------------------------------------------

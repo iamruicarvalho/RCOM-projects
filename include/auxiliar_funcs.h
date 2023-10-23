@@ -3,6 +3,7 @@
 
 #include "link_layer.h"
 
+<<<<<<< HEAD
 #define FLAG       0x7E
 #define A_SET      0x03
 #define C_SET      0x03
@@ -16,6 +17,8 @@
 #define C_RR(Nr) ((Nr << 7) | 0x05)
 #define C_REJ(Nr) ((Nr << 7) | 0x01)
 
+=======
+>>>>>>> llwrite
 int linkTx(LinkLayer connection);
 int linkRx(LinkLayer connection);
 void alarmHandler(int signal);
