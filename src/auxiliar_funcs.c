@@ -62,7 +62,7 @@ int linkTx(LinkLayer connection) {
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
 
-                int bytes = read(fd, UA_buffer, 1);
+                read(fd, UA_buffer, 1);
                 // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
 
                 // state machine
@@ -269,9 +269,4 @@ unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long
     unsigned char *name = (unsigned char*)malloc(fileNameNBytes);
     memcpy(name, packet+3+fileSizeNBytes+2, fileNameNBytes);
     return name;
-}
-
-void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer) {
-    memcpy(buffer,packet+4,packetSize-4);
-    buffer += packetSize+4;
 }

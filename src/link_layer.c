@@ -81,7 +81,7 @@ int llwrite(const unsigned char *buf, int bufSize)
 
     // building BCC2: xor of all D's
     unsigned char BCC2 = buf[0];
-    for (unsigned int i = 1 ; i < bufSize ; i++) 
+    for (unsigned int i = 1 ; i < bufSize ; i++)
         BCC2 ^= buf[i];
 
     I_buf[currPosition++] = BCC2;
@@ -89,7 +89,6 @@ int llwrite(const unsigned char *buf, int bufSize)
     int size_I_buf = currPosition;
 
     unsigned char data[5] = {0};
-    unsigned char state = START;
     (void) signal(SIGALRM, alarmHandler);
 
     int accepted = 0;
@@ -121,9 +120,9 @@ int llwrite(const unsigned char *buf, int bufSize)
                 else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
                     accepted = 1;
                     tramaTx = (tramaTx+1) % 2;    // need to check this later
-                    alarmEnabled = FALSE;  
+                    alarmEnabled = FALSE;
                 }
-                else 
+                else
                     continue;
             }
             if (accepted)   // I frame sent correctly. we can get out of the while
@@ -135,7 +134,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     if (accepted)
         return size_I_buf;
     else {
-        llclose(fd);    
+        llclose(fd);
         return -1;
     }
 }
@@ -149,48 +148,48 @@ int llread(unsigned char *packet)
     unsigned char buf, cField;
     int i = 0;
 
-    while (state != STOP_R) {  
-        
+    while (state != STOP_R) {
+        read(fd, &buf, 1);
         switch (state) {
 
             case START_TX:
-                if (buf == FLAG) 
+                if (buf == FLAG)
                     state = FLAG_RCV;
                 break;
 
             case FLAG_RCV:
-                if (buf == A_ER) 
+                if (buf == A_ER)
                     state = A_RCV;
-                else if (buf != FLAG)   
+                else if (buf != FLAG)
                     state = START_TX;
                 break;
 
             case A_RCV:
                 if (buf == C_N(0) || buf == C_N(1)) {
                     state = C_RCV;
-                    cField = buf;   
+                    cField = buf;
                 }
-                else if (buf == FLAG) 
+                else if (buf == FLAG)
                     state = FLAG_RCV;
                 else if (buf == C_DISC) {
                     sendSupervisionFrame(fd, A_RE, C_DISC);
                     return 0;
                 }
-                else 
+                else
                     state = START;
                 break;
 
             case C_RCV:
-                if (buf == (A_ER ^ cField)) 
+                if (buf == (A_ER ^ cField))
                     state = READING_DATA;
-                else if (buf == FLAG) 
+                else if (buf == FLAG)
                     state = FLAG_RCV;
-                else 
+                else
                     state = START;
                 break;
 
             case READING_DATA:
-                if (buf == ESC) 
+                if (buf == ESC)
                     state = DATA_FOUND_ESC;
                 else if (buf == FLAG) {
                     unsigned char bcc2 = packet[i-1];
@@ -221,17 +220,17 @@ int llread(unsigned char *packet)
 
             case DATA_FOUND_ESC:
                 state = READING_DATA;
-                if (buf == ESC || buf == FLAG) 
+                if (buf == ESC || buf == FLAG)
                     packet[i++] = buf;
                 else {
                     packet[i++] = ESC;
                     packet[i++] = buf;
                 }
                 break;
-            default: 
+            default:
                 break;
         }
-        
+
     }
     return -1;
 }
@@ -241,19 +240,16 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int fd)
 {
-    // UA buffer that is sent as an answer by the receiver
-    unsigned char DISC_buf[1] = {0};
-
+    unsigned char* DISC_buf;
     unsigned char state = START;
-
     int result = -1;
 
     // Set alarm function handler
     (void) signal(SIGALRM, alarmHandler);
 
-    while (alarmCount < retransmissions && LINKED == FALSE)
+    while (alarmCount < retransmissions)
     {
-        // send SET buffer
+        // send DISC buffer
         int bytes = sendSupervisionFrame(fd, A_DISC, A_DISC);
         printf("%d bytes written\n", bytes);
 
@@ -266,7 +262,7 @@ int llclose(int fd)
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
 
-                int bytes = read(fd, DISC_buf, 1);
+                read(fd, &DISC_buf, 1);
                 // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
 
                 // state machine
@@ -313,6 +309,7 @@ int llclose(int fd)
             }
         }
     }
+
     // send the UA buffer to the receiver
     sendSupervisionFrame(fd, 0x03, C_UA);
 
@@ -326,6 +323,7 @@ int llclose(int fd)
     }
 
     sleep(1);
-    return close(fd);
-}
+    close(fd);
 
+    return result;
+}
