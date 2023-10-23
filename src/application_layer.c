@@ -59,7 +59,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
               }
               else continue;
           }
-          printf("%i bytes read", bytes);    // only for debugging
+          printf("%i bytes read", packetSize);    // only for debugging
 
         }
 
