@@ -96,8 +96,10 @@ int llwrite(const unsigned char *buf, int bufSize)
 
     int accepted = 0;
     int rejected = 0;
+    STOP = FALSE;
+    alarmCount = 0;
 
-    while (alarmCount < retransmissions && LINKED == FALSE && !accepted && !rejected)
+    while (alarmCount < retransmissions && !accepted && !rejected)
     {
         int bytes = write(fd, I_buf, size_I_buf);
         printf("%d bytes written\n", bytes);
@@ -109,7 +111,7 @@ int llwrite(const unsigned char *buf, int bufSize)
             alarm(timeout); // Set alarm to be triggered in 3s
             alarmEnabled = TRUE;
 
-            while (alarmEnabled == TRUE && STOP == FALSE) {
+            while (alarmEnabled == TRUE) {
                 int result = read(fd, data, 5);
 
                 if (!result)
@@ -121,20 +123,21 @@ int llwrite(const unsigned char *buf, int bufSize)
                 else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
                     accepted = 1;
                     tramaTx = (tramaTx+1) % 2;    // need to check this later
-                    alarmEnabled = FALSE;
+                    alarmEnabled = FALSE;  
                 }
                 else 
                     continue;
             }
             if (accepted)   // I frame sent correctly. we can get out of the while
                 break;
-            alarmCount++;
         }
     }
+
+    free(I_buf);
     if (accepted)
         return size_I_buf;
     else {
-        llclose(fd);
+        llclose(fd);    // to check
         return -1;
     }
 }
@@ -144,76 +147,69 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-    FILE* file;
-    file = fopen(filename,"w");
-    fwrite(packet, size, 1, file);
+    int bytesRead = 0;
+    STOP = FALSE;
+    unsigned char state = START;
+    unsigned char buf, cField;
 
-    // ------------------------------------------
-    if (LINKED == TRUE) {       // I think this main if belongs to the llread function
-      int STOP = FALSE;
-      unsigned char data[5];
-
-      while (STOP == FALSE) {
-        int bytes = read(fd, buf, 1);
-        unsigned char A = 0x03;
-        unsigned char C = 0x00;
-        unsigned char BCC1 = A ^ C;
-        // unsigned char BCC2 = ;   xor of all d's
-        switch (buf[0]) {               // need to check the state machine with juani
-          case 0x03:  // can be A or C
-            if (state == FLAG) {
-              state = A;
-            }
-            else {
+    while (STOP == FALSE) {
+        int buf = read(fd, &buf, 1);
+        
+        switch (buf) {              
+            case A_:  // can be A or C
+                if (state == FLAG) {
+                    state = A;
+                }
+                else {
                 // process data
-            }
-            break;
+                }
+                break;
 
-          case 0x00:
-            if (state == A) {
-              state = C;
-            }
-            else {
-              // process data
-            }
-            break;
+            case 0x00:
+                if (state == A) {
+                    state = C;
+                }
+                else {
+                    // process data
+                }
+                break;
 
-          case (0x03 ^ 0x00):  // BCC1
-            if (state == C) {
-              state = BCC1;
-            }
-            else {
-              // process data
-            }
-            break;
+            case (0x03 ^ 0x00):  // BCC1
+                if (state == C) {
+                    state = BCC1;
+                }
+                else {
+                    // process data
+                }
+                break;
 
-        //case (xor of all d's):  // BCC2 -------- to check
-            if (state == BCC1) {
-              state = BCC2;
-            }
-            else {
-              // process data
-            }
-            break;
+            //case (xor of all d's):  // BCC2 -------- to check
+                if (state == BCC1) {
+                    state = BCC2;
+                }
+                else {
+                    // process data
+                }
+                break;
 
-          case 0x7E:  // FLAG
-            if (state == BCC2) {
-              LINKED = TRUE;    // ends the loop
-              state = START;
-            }
-            else {
-              state = FLAG;
-            }
-            break;
-          default:
-            if (state == BCC1) {
-              // process data
-            }
+            case FLAG:  // FLAG
+                if (state == BCC2) {
+                    STOP = TRUE;    // ends the loop
+                    state = START;
+                    sendSupervisionFrame(fd, A_UA, C_RR(tramaRx));
+                }
+                else {
+                    state = FLAG;
+                }
+                break;
+            default:
+                if (state == BCC1) {
+                    // process data
+                }
         }
-      }
-    } // ------------------------------------------------
+    }
 
-    return 0;
+    return bytesRead;
 }
 
 ////////////////////////////////////////////////

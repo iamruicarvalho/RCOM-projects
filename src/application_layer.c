@@ -74,8 +74,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
           printf("An error occurred while closing the connection");
 
     } else {
-        printf("An error occurred in the linking process. Terminating the
-          program");
+        printf("An error occurred in the linking process. Terminating the program");
     }
 
 }
