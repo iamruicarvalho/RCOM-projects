@@ -27,6 +27,8 @@ int alarmEnabled = FALSE;
 int alarmCount = 0;
 int timeout = 0;
 int retransmissions = 0;
+unsigned char tramaTx = 0;
+unsigned char tramaRx = 1;
 unsigned char START = 0xFF;
 
 ////////////////////////////////////////////////
@@ -147,19 +149,17 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-    file = fopen(filename,"w");
-    fwrite(packet, size, 1, file);
-
-    int STOP = FALSE;
+    int bytesRead = 0;
+    STOP = FALSE;
+    unsigned char state = START;
+    unsigned char byte, cField;
 
     while (STOP == FALSE) {
-        int bytes = read(fd, buf, 1);
-        unsigned char A = 0x03;
-        unsigned char C = 0x00;
-        unsigned char BCC1 = A ^ C;
+        int byte = read(fd, &byte, 1);
+        
         // unsigned char BCC2 = ;   xor of all d's
-        switch (buf[0]) {               // need to check the state machine with juani
-            case 0x03:  // can be A or C
+        switch (byte) {               // need to check the state machine with juani
+            case A_SET:  // can be A or C
                 if (state == FLAG) {
                     state = A;
                 }
@@ -195,10 +195,11 @@ int llread(unsigned char *packet)
                 }
                 break;
 
-            case 0x7E:  // FLAG
+            case FLAG:  // FLAG
                 if (state == BCC2) {
-                    LINKED = TRUE;    // ends the loop
+                    STOP = TRUE;    // ends the loop
                     state = START;
+                    sendSupervisionFrame(fd, A_UA, C_RR(tramaRx));
                 }
                 else {
                     state = FLAG;
@@ -211,9 +212,7 @@ int llread(unsigned char *packet)
         }
     }
 
-  // TODO
-
-    return 0;
+    return bytesRead;
 }
 
 ////////////////////////////////////////////////
@@ -311,4 +310,9 @@ int llclose(int fd)
 
     sleep(1);
     return close(fd);
+}
+
+int sendSupervisionFrame(int fd, unsigned char A, unsigned char C) {
+    unsigned char buf[5] = {FLAG, A, C, A ^ C, FLAG};
+    return write(fd, buf, 5);
 }

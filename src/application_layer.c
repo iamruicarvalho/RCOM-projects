@@ -30,7 +30,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 perror("File not found\n"); 
                 exit(-1);
             }   
-            
+
             const unsigned char* buf;       
             fread(buf, size, 1, file);      
 
@@ -39,8 +39,24 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
         } else {  // enumRole == LlRx
 
-          unsigned char* packet;      // not sure where this should come from
-          int bytes = llread(packet);
+          unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
+          int packetSize = -1;
+          while ((packetSize = llread(packet)) < 0);
+          unsigned long int rxFileSize = 0;
+          unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize); 
+
+          FILE* newFile = fopen((char *) name, "wb+");
+          while (1) {    
+              while ((packetSize = llread(packet)) < 0);
+              if(packetSize == 0) break;
+              else if(packet[0] != 3){
+                  unsigned char *buffer = (unsigned char*)malloc(packetSize);
+                  parseDataPacket(packet, packetSize, buffer);
+                  fwrite(buffer, sizeof(unsigned char), packetSize-4, newFile);
+                  free(buffer);
+              }
+              else continue;
+          }
           printf("%i bytes read", bytes);    // only for debugging
 
         }

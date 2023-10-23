@@ -13,11 +13,14 @@
 #define A_DISC     0x03
 #define C_DISC     0x0B
 #define BCC1_DISC  (A_DISC ^ C_DISC)
+#define C_RR(Nr) ((Nr << 7) | 0x05)
+#define C_REJ(Nr) ((Nr << 7) | 0x01)
 
 int linkTx(LinkLayer connection);
 int linkRx(LinkLayer connection);
 void alarmHandler(int signal);
 int makeConnection(const char* serialPort);
 int sendSupervisionFrame(int fd, unsigned char A, unsigned char C);
+unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize);
 
 #endif _AUX_FUNS_H

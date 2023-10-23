@@ -261,3 +261,19 @@ int makeConnection(const char* serialPort) {
 
     return fd;
 }
+
+unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize) {
+
+    // File Size
+    unsigned char fileSizeNBytes = packet[2];
+    unsigned char fileSizeAux[fileSizeNBytes];
+    memcpy(fileSizeAux, packet+3, fileSizeNBytes);
+    for(unsigned int i = 0; i < fileSizeNBytes; i++)
+        *fileSize |= (fileSizeAux[fileSizeNBytes-i-1] << (8*i));
+
+    // File Name
+    unsigned char fileNameNBytes = packet[3+fileSizeNBytes+1];
+    unsigned char *name = (unsigned char*)malloc(fileNameNBytes);
+    memcpy(name, packet+3+fileSizeNBytes+2, fileNameNBytes);
+    return name;
+}
