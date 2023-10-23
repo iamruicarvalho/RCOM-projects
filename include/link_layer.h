@@ -4,21 +4,6 @@
 #ifndef _LINK_LAYER_H_
 #define _LINK_LAYER_H_
 
-#define FLAG       0x7E
-#define A_SET      0x03
-#define C_SET      0x03
-#define BCC1_SET   (A_SET ^ C_SET)
-#define A_UA       0x01
-#define C_UA       0x07
-#define BCC1_UA    (A_UA ^ C_UA)
-#define A_DISC     0x03
-#define C_DISC     0x0B
-#define BCC1_DISC  (A_DISC ^ C_DISC)
-#define C_N(Ns)    (Ns << 6)
-#define ESC        0x7D
-#define C_RR(Nr)   ((Nr << 7) | 0x05)
-#define C_REJ(Nr)  ((Nr << 7) | 0x01)
-
 typedef enum
 {
     LlTx,

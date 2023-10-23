@@ -25,11 +25,10 @@ int alarmEnabled = FALSE;
 int alarmCount = 0;
 unsigned char START = 0xFF;
 
-
 int linkTx(LinkLayer connection) {
 
     // open serial port
-    int fd = makeConnection(connection.serialPort);
+    fd = makeConnection(connection.serialPort);
     if (fd < 0)
       return -1;
 
@@ -120,7 +119,7 @@ int linkTx(LinkLayer connection) {
 int linkRx(LinkLayer connection) {
 
     // open serial port
-    int fd = makeConnection(connection.serialPort);
+    fd = makeConnection(connection.serialPort);
     if (fd < 0)
       return -1;
 

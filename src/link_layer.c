@@ -57,8 +57,6 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    int fd = makeConnection(serialPort);
-
     // prepare I frame to send
     unsigned char* I_buf = (unsigned char*) malloc(bufSize + 6);
     I_buf[0] = FLAG;
@@ -137,7 +135,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     if (accepted)
         return size_I_buf;
     else {
-        llclose(fd);    // to check
+        llclose(fd);    
         return -1;
     }
 }
@@ -147,69 +145,87 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-    int bytesRead = 0;
-    STOP = FALSE;
-    unsigned char state = START;
+    LinkLayerState state = START_TX;
     unsigned char buf, cField;
+    int i = 0;
 
-    while (STOP == FALSE) {
-        int buf = read(fd, &buf, 1);
+    while (state != STOP_R) {  
         
-        switch (buf) {              
-            case A_:  // can be A or C
-                if (state == FLAG) {
-                    state = A;
-                }
-                else {
-                // process data
-                }
+        switch (state) {
+            case START_TX:
+                if (buf == FLAG) 
+                    state = FLAG_RCV;
                 break;
-
-            case 0x00:
-                if (state == A) {
-                    state = C;
-                }
-                else {
-                    // process data
-                }
+            case FLAG_RCV:
+                if (buf == A_ER) 
+                    state = A_RCV;
+                else if (buf != FLAG)   
+                    state = START_TX;
                 break;
-
-            case (0x03 ^ 0x00):  // BCC1
-                if (state == C) {
-                    state = BCC1;
+            case A_RCV:
+                if (buf == C_N(0) || buf == C_N(1)) {
+                    state = C_RCV;
+                    cField = buf;   
                 }
-                else {
-                    // process data
+                else if (buf == FLAG) 
+                    state = FLAG_RCV;
+                else if (buf == C_DISC) {
+                    sendSupervisionFrame(fd, A_RE, C_DISC);
+                    return 0;
                 }
-                break;
-
-            //case (xor of all d's):  // BCC2 -------- to check
-                if (state == BCC1) {
-                    state = BCC2;
-                }
-                else {
-                    // process data
-                }
-                break;
-
-            case FLAG:  // FLAG
-                if (state == BCC2) {
-                    STOP = TRUE;    // ends the loop
+                else 
                     state = START;
-                    sendSupervisionFrame(fd, A_UA, C_RR(tramaRx));
+                break;
+            case C_RCV:
+                if (buf == (A_ER ^ cField)) 
+                    state = READING_DATA;
+                else if (buf == FLAG) 
+                    state = FLAG_RCV;
+                else 
+                    state = START;
+                break;
+            case READING_DATA:
+                if (buf == ESC) state = DATA_FOUND_ESC;
+                else if (buf == FLAG){
+                    unsigned char bcc2 = packet[i-1];
+                    i--;
+                    packet[i] = '\0';
+                    unsigned char acc = packet[0];
+
+                    for (unsigned int j = 1; j < i; j++)
+                        acc ^= packet[j];
+
+                    if (bcc2 == acc){
+                        state = STOP_R;
+                        sendSupervisionFrame(fd, A_RE, C_RR(tramaRx));
+                        tramaRx = (tramaRx + 1)%2;
+                        return i; 
+                    }
+                    else{
+                        printf("Error: retransmition\n");
+                        sendSupervisionFrame(fd, A_RE, C_REJ(tramaRx));
+                        return -1;
+                    };
+
                 }
-                else {
-                    state = FLAG;
+                else{
+                    packet[i++] = buf;
                 }
                 break;
-            default:
-                if (state == BCC1) {
-                    // process data
+            case DATA_FOUND_ESC:
+                state = READING_DATA;
+                if (buf == ESC || buf == FLAG) packet[i++] = buf;
+                else{
+                    packet[i++] = ESC;
+                    packet[i++] = buf;
                 }
+                break;
+            default: 
+                break;
         }
+        
     }
-
-    return bytesRead;
+    return -1;
 }
 
 ////////////////////////////////////////////////
