@@ -4,6 +4,7 @@
 #include <string.h>
 #include "application_layer.h"
 #include "link_layer.h"
+#include "auxiliar_funcs.h"
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
@@ -26,6 +27,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         if (enumRole == LlTx) {
 
             file = fopen(filename,"rb");    
+            size_t size = sizeof(file);
             if (file == NULL) {             
                 perror("File not found\n"); 
                 exit(-1);

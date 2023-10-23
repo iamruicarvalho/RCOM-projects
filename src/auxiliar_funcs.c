@@ -197,10 +197,8 @@ void alarmHandler(int signal)
 }
 
 int sendSupervisionFrame(int fd, unsigned char A, unsigned char C) {
-    unsigned char BCC1 = A ^ C;
-    unsigned char buffer[5] = {FLAG, A, C, BCC1, FLAG};
-
-    return write(fd, buffer, 5);
+    unsigned char buf[5] = {FLAG, A, C, A ^ C, FLAG};
+    return write(fd, buf, 5);
 }
 
 int makeConnection(const char* serialPort) {

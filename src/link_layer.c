@@ -31,8 +31,6 @@ unsigned char tramaTx = 0;
 unsigned char tramaRx = 1;
 const char* serialPort;
 unsigned char START = 0xFF;
-unsigned char tramaTx = 0;
-unsigned char tramaRx = 1;
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -311,7 +309,3 @@ int llclose(int fd)
     return close(fd);
 }
 
-int sendSupervisionFrame(int fd, unsigned char A, unsigned char C) {
-    unsigned char buf[5] = {FLAG, A, C, A ^ C, FLAG};
-    return write(fd, buf, 5);
-}
