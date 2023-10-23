@@ -126,7 +126,7 @@ int llwrite(const unsigned char *buf, int bufSize)
                 else 
                     continue;
             }
-            if (accepted)       // I frame sent correctly. we can get out of the while
+            if (accepted)   // I frame sent correctly. we can get out of the while
                 break;
             alarmCount++;
         }
