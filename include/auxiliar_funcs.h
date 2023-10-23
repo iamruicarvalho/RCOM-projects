@@ -42,5 +42,6 @@ void alarmHandler(int signal);
 int makeConnection(const char* serialPort);
 int sendSupervisionFrame(int fd, unsigned char A, unsigned char C);
 unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize);
+void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer);
 
 #endif 

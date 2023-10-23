@@ -270,3 +270,8 @@ unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long
     memcpy(name, packet+3+fileSizeNBytes+2, fileNameNBytes);
     return name;
 }
+
+void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer) {
+    memcpy(buffer,packet+4,packetSize-4);
+    buffer += packetSize+4;
+}
