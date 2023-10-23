@@ -27,6 +27,7 @@ int alarmEnabled = FALSE;
 int alarmCount = 0;
 int timeout = 0;
 int retransmissions = 0;
+const char* serialPort;
 unsigned char START = 0xFF;
 unsigned char tramaTx = 0;
 unsigned char tramaRx = 1;
@@ -37,8 +38,9 @@ unsigned char tramaRx = 1;
 int llopen(LinkLayer connectionParameters)
 {
     int result;
-    int timeout = connectionParameters.timeout;
-    int retransmissions = connectionParameters.nRetransmissions;
+    timeout = connectionParameters.timeout;
+    retransmissions = connectionParameters.nRetransmissions;
+    serialPort = connectionParameters.serialPort;
 
     if (connectionParameters.role == LlTx) {
         result = linkTx(connectionParameters);
@@ -55,105 +57,86 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
+    int fd = makeConnection(serialPort);
+
+    // prepare I frame to send
     unsigned char* I_buf = (unsigned char*) malloc(bufSize + 6);
     I_buf[0] = FLAG;
     I_buf[1] = 0x03;
     I_buf[2] = C_N(tramaTx);
     I_buf[3] = I_buf[1] ^ I_buf[2];
 
-    // copy the content of buf to the next position of I_buf
-    unsigned char* currPosition = I_buf + 4;
-    memcpy(currPosition, buf, bufSize);    
+    // data packet
+    int currPosition = 4;
+    for (int i = 0; i < bufSize; i++) {
+        if (buf[i] == FLAG) {
+            I_buf[currPosition++] = ESC;
+            I_buf[currPosition++] = 0x5E;
+        }
+        else if (buf[i] == ESC) {
+            I_buf[currPosition++] = ESC;
+            I_buf[currPosition++] = 0x5D;
+        }
+        else
+            I_buf[currPosition++] = buf[i];
+    }
 
     // building BCC2: xor of all D's
     unsigned char BCC2 = buf[0];
     for (unsigned int i = 1 ; i < bufSize ; i++) 
         BCC2 ^= buf[i];
 
-    unsigned char nextPosition = currPosition++;
-    unsigned char finalPosition = nextPosition++;
-    I_buf[nextPosition] = BCC2;
-    I_buf[finalPosition] = FLAG;
+    I_buf[currPosition++] = BCC2;
+    I_buf[currPosition++] = FLAG;
+    int size_I_buf = currPosition;
 
-
-    
-
-    /*unsigned char RR1_buffer[1] = {0};
+    unsigned char data[5] = {0};
     unsigned char state = START;
+    (void) signal(SIGALRM, alarmHandler);
 
-    // UA buffer that is sent as an answer by the receiver
-    unsigned char RR1_FLAG = 0x7E;
-    unsigned char RR1_A = 0x03;
-    unsigned char RR1_C = 0x85;
-    unsigned char REJ1_C = 0x81;
-    unsigned char RR1_BCC1 = RR1_A ^ RR1_C;*/
-    //-------------------------------------------------------
+    int accepted = 0;
+    int rejected = 0;
 
-
-
-    // send I(Ns=0) (see how the RR and REJ works)
-    while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
+    while (alarmCount < retransmissions && LINKED == FALSE && !accepted && !rejected)
     {
-        int bytes = write(fd, buf, 6);
+        int bytes = write(fd, I_buf, size_I_buf);
         printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
         if (alarmEnabled == FALSE)
         {
-            alarm(connection.timeout); // Set alarm to be triggered in 3s
+            alarm(timeout); // Set alarm to be triggered in 3s
             alarmEnabled = TRUE;
 
-            while (STOP == FALSE && alarmEnabled == TRUE) {
+            while (alarmEnabled == TRUE && STOP == FALSE) {
+                int result = read(fd, data, 5);
 
-                int bytes = read(fd, RR1_buffer, 1);
-                // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
+                if (!result)
+                    continue;
 
-                // state machine
-                switch(RR1_buffer[0]) {
-                    case 0x03:  //RR1_A
-                        if (state == RR1_FLAG)
-                            state = RR1_A;
-                        else
-                            state = START;
-                        break;
+                else if (result == C_REJ(0) || result == C_REJ(1)) // I frame rejected. need to read again
+                    rejected = 1;
 
-                    case 0x85:  //RR1_C
-                        if (state == RR1_A)
-                            state = RR1_C;
-                        else
-                            state = START;
-                        break;
-
-                    case (0x03 ^ 0x85):  //RR1_BCC1
-                        if (state == RR1_C)
-                            state = RR1_BCC1;
-                        else
-                            state = START;
-                        break;
-
-                    case 0x7E:  //RR1_FLAG
-                        if (state == RR1_BCC1) {
-                            LINKED = TRUE;
-                            state = START;
-                            result = 1;
-
-                            printf("Successful reception\n");
-                            alarm(0);   // alarm is disabled
-
-                            /*int bytes = write(fd, SET, 5);
-                            printf("%d SET bytes written\n", bytes);*/
-                        }
-                        else
-                            state = RR1_FLAG;
-                        break;
-                    default:
-                        state = START;
+                else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
+                    accepted = 1;
+                    tramaTx = (tramaTx+1) % 2;    // need to check this later
+                    alarmEnabled = FALSE;
                 }
+                else 
+                    continue;
             }
+            if (accepted)       // I frame sent correctly. we can get out of the while
+                break;
+            alarmCount++;
         }
     }
-    return 0;
+    if (accepted)
+        return size_I_buf;
+    else {
+        llclose(fd);
+        return -1;
+    }
 }
 
 ////////////////////////////////////////////////
@@ -161,10 +144,74 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-  file = fopen(filename,"w");
-  fwrite(packet, size, 1, file);
+    FILE* file;
+    file = fopen(filename,"w");
+    fwrite(packet, size, 1, file);
 
-  // TODO
+    // ------------------------------------------
+    if (LINKED == TRUE) {       // I think this main if belongs to the llread function
+      int STOP = FALSE;
+      unsigned char data[5];
+
+      while (STOP == FALSE) {
+        int bytes = read(fd, buf, 1);
+        unsigned char A = 0x03;
+        unsigned char C = 0x00;
+        unsigned char BCC1 = A ^ C;
+        // unsigned char BCC2 = ;   xor of all d's
+        switch (buf[0]) {               // need to check the state machine with juani
+          case 0x03:  // can be A or C
+            if (state == FLAG) {
+              state = A;
+            }
+            else {
+                // process data
+            }
+            break;
+
+          case 0x00:
+            if (state == A) {
+              state = C;
+            }
+            else {
+              // process data
+            }
+            break;
+
+          case (0x03 ^ 0x00):  // BCC1
+            if (state == C) {
+              state = BCC1;
+            }
+            else {
+              // process data
+            }
+            break;
+
+        //case (xor of all d's):  // BCC2 -------- to check
+            if (state == BCC1) {
+              state = BCC2;
+            }
+            else {
+              // process data
+            }
+            break;
+
+          case 0x7E:  // FLAG
+            if (state == BCC2) {
+              LINKED = TRUE;    // ends the loop
+              state = START;
+            }
+            else {
+              state = FLAG;
+            }
+            break;
+          default:
+            if (state == BCC1) {
+              // process data
+            }
+        }
+      }
+    } // ------------------------------------------------
 
     return 0;
 }
@@ -177,10 +224,6 @@ int llclose(int fd)
     // UA buffer that is sent as an answer by the receiver
     unsigned char DISC_buf[1] = {0};
 
-    /*unsigned char UA_FLAG = 0x7E;
-    unsigned char UA_A = 0x03;
-    unsigned char UA_C = 0x07;
-    unsigned char UA_BCC1 = UA_A ^ UA_C;*/
     unsigned char state = START;
 
     int result = -1;
