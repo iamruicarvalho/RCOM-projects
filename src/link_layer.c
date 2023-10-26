@@ -3,16 +3,20 @@
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 #include "auxiliar_funcs.h"
-// #include "link_layer.h"
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <termios.h>
-#include <unistd.h>
-#include <signal.h>
+#include "link_layer.h"
+
+extern volatile int STOP;
+extern volatile int LINKED;
+extern int alarmEnabled;
+extern int alarmCount;
+extern int timeout;
+extern int retransmissions;
+extern unsigned char tramaTx;
+extern unsigned char tramaRx;
+extern const char* serialPort;
+extern unsigned char START;
+extern int fd;
+
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -20,6 +24,8 @@
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 #define BUF_SIZE 256
+
+
 
 ////////////////////////////////////////////////
 // LLOPEN

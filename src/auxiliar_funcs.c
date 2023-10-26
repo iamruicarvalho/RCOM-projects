@@ -1,13 +1,4 @@
 #include "auxiliar_funcs.h"
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <termios.h>
-#include <unistd.h>
-#include <signal.h>
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -17,6 +8,18 @@
 #define FALSE 0
 #define TRUE 1
 #define BUF_SIZE 256
+
+extern volatile int STOP;
+extern volatile int LINKED;
+extern int alarmEnabled;
+extern int alarmCount;
+extern int timeout;
+extern int retransmissions;
+extern unsigned char tramaTx;
+extern unsigned char tramaRx;
+extern const char* serialPort;
+extern unsigned char START;
+extern int fd;
 
 int linkTx(LinkLayer connection) {
 

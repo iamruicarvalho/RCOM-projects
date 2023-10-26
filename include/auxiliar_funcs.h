@@ -2,6 +2,15 @@
 #define _AUX_FUNCS_H_
 
 #include "link_layer.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <termios.h>
+#include <unistd.h>
+#include <signal.h>
 
 #define FLAG       0x7E
 #define A_SET      0x03
