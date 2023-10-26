@@ -1,5 +1,4 @@
 #include "auxiliar_funcs.h"
-#include "link_layer.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,18 +18,7 @@
 #define TRUE 1
 #define BUF_SIZE 256
 
-volatile int STOP = FALSE;
-volatile int LINKED = FALSE;
-int alarmEnabled = FALSE;
-int alarmCount = 0;
-unsigned char START = 0xFF;
-
 int linkTx(LinkLayer connection) {
-
-    // open serial port
-    fd = makeConnection(connection.serialPort);
-    if (fd < 0)
-      return -1;
 
     // In non-canonical mode, '\n' does not end the writing.
     // Test this condition by placing a '\n' in the middle of the buffer.
@@ -50,7 +38,7 @@ int linkTx(LinkLayer connection) {
     while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
     {
         // send SET buffer
-        int bytes = sendSupervisionFrame(fd, A_SET, C_SET);
+        int bytes = sendSupervisionFrame(A_SET, C_SET);
         printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
@@ -118,11 +106,6 @@ int linkTx(LinkLayer connection) {
 
 int linkRx(LinkLayer connection) {
 
-    // open serial port
-    fd = makeConnection(connection.serialPort);
-    if (fd < 0)
-      return -1;
-
     // Loop for input
     unsigned char buf[1] = {0}; // +1: Save space for the final '\0' char
     unsigned char state = START;
@@ -167,7 +150,7 @@ int linkRx(LinkLayer connection) {
                 result = 1;
 
                 // Sending the response (UA)
-                int bytes = sendSupervisionFrame(fd, A_UA, C_UA);
+                int bytes = sendSupervisionFrame(A_UA, C_UA);
                 printf("\n%d UA bytes written\n", bytes);
               }
               else {
@@ -195,7 +178,7 @@ void alarmHandler(int signal)
     printf("Alarm #%d\n", alarmCount);
 }
 
-int sendSupervisionFrame(int fd, unsigned char A, unsigned char C) {
+int sendSupervisionFrame(unsigned char A, unsigned char C) {
     unsigned char buf[5] = {FLAG, A, C, A ^ C, FLAG};
     return write(fd, buf, 5);
 }
@@ -203,7 +186,7 @@ int sendSupervisionFrame(int fd, unsigned char A, unsigned char C) {
 int makeConnection(const char* serialPort) {
     // Open serial port device for reading and writing, and not as controlling tty
     // because we don't want to get killed if linenoise sends CTRL-C.
-    int fd = open(serialPort, O_RDWR | O_NOCTTY);
+    fd = open(serialPort, O_RDWR | O_NOCTTY);
 
     if (fd < 0)
     {

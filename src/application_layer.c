@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "application_layer.h"
 #include "link_layer.h"
 #include "auxiliar_funcs.h"
@@ -16,8 +17,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         enumRole = LlRx;
     }
 
-    LinkLayer connectionParameters = {serialPort, enumRole, baudRate, nTries, timeout};
-    strcpy(connectionParameters.serialPort, serialPort);
+    char *auxSerialPort = NULL;
+    strcpy(auxSerialPort, serialPort);
+
+    LinkLayer connectionParameters = {{(*auxSerialPort), enumRole, baudRate, nTries, timeout}};
 
     int openResult = llopen(connectionParameters);
 
@@ -33,7 +36,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 exit(-1);
             }
 
-            const unsigned char* buf;
+            unsigned char* buf = NULL;
             fread(buf, size, 1, file);
 
             int bytes = llwrite(buf, size);

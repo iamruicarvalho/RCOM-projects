@@ -3,7 +3,7 @@
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 #include "auxiliar_funcs.h"
-#include "link_layer.h"
+// #include "link_layer.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,17 +21,6 @@
 
 #define BUF_SIZE 256
 
-volatile int STOP = FALSE;
-volatile int LINKED = FALSE;
-int alarmEnabled = FALSE;
-int alarmCount = 0;
-int timeout = 0;
-int retransmissions = 0;
-unsigned char tramaTx = 0;
-unsigned char tramaRx = 1;
-const char* serialPort;
-unsigned char START = 0xFF;
-
 ////////////////////////////////////////////////
 // LLOPEN
 ////////////////////#include <termios.h>////////////////////////////
@@ -41,6 +30,10 @@ int llopen(LinkLayer connectionParameters)
     timeout = connectionParameters.timeout;
     retransmissions = connectionParameters.nRetransmissions;
     serialPort = connectionParameters.serialPort;
+
+    fd = makeConnection(connectionParameters.serialPort);
+    if (fd < 0)
+      return -1;
 
     if (connectionParameters.role == LlTx) {
         result = linkTx(connectionParameters);
@@ -134,7 +127,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     if (accepted)
         return size_I_buf;
     else {
-        llclose(fd);
+        llclose(FALSE);
         return -1;
     }
 }
@@ -172,7 +165,7 @@ int llread(unsigned char *packet)
                 else if (buf == FLAG)
                     state = FLAG_RCV;
                 else if (buf == C_DISC) {
-                    sendSupervisionFrame(fd, A_RE, C_DISC);
+                    sendSupervisionFrame(A_RE, C_DISC);
                     return 0;
                 }
                 else
@@ -202,13 +195,13 @@ int llread(unsigned char *packet)
 
                     if (bcc2 == acc) {
                         state = STOP_R;
-                        sendSupervisionFrame(fd, A_RE, C_RR(tramaRx));
+                        sendSupervisionFrame(A_RE, C_RR(tramaRx));
                         tramaRx = (tramaRx + 1) % 2;
                         return i;   // amount of bytes read
                     }
                     else {
                         printf("An error ocurred, sending RREJ\n");
-                        sendSupervisionFrame(fd, A_RE, C_REJ(tramaRx));
+                        sendSupervisionFrame(A_RE, C_REJ(tramaRx));
                         return -1;
                     };
 
@@ -238,7 +231,7 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 // LLCLOSE
 ////////////////////////////////////////////////
-int llclose(int fd)
+int llclose(int showStatistics)
 {
     unsigned char* DISC_buf;
     unsigned char state = START;
@@ -250,7 +243,7 @@ int llclose(int fd)
     while (alarmCount < retransmissions)
     {
         // send DISC buffer
-        int bytes = sendSupervisionFrame(fd, A_DISC, A_DISC);
+        int bytes = sendSupervisionFrame(A_DISC, A_DISC);
         printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
@@ -311,7 +304,7 @@ int llclose(int fd)
     }
 
     // send the UA buffer to the receiver
-    sendSupervisionFrame(fd, 0x03, C_UA);
+    sendSupervisionFrame(0x03, C_UA);
 
     struct termios oldtio;
 

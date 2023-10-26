@@ -34,13 +34,24 @@ typedef enum
    BCC2_OK
 } LinkLayerState;
 
+volatile int STOP = FALSE;
+volatile int LINKED = FALSE;
+int alarmEnabled = FALSE;
+int alarmCount = 0;
+int timeout = 0;
+int retransmissions = 0;
+unsigned char tramaTx = 0;
+unsigned char tramaRx = 1;
+const char* serialPort;
+unsigned char START = 0xFF;
+
 int fd;
 
 int linkTx(LinkLayer connection);
 int linkRx(LinkLayer connection);
 void alarmHandler(int signal);
 int makeConnection(const char* serialPort);
-int sendSupervisionFrame(int fd, unsigned char A, unsigned char C);
+int sendSupervisionFrame(unsigned char A, unsigned char C);
 unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize);
 void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer);
 
