@@ -35,12 +35,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 exit(-1);
             }
 
-            unsigned char* buf = NULL;
+            unsigned char* buf = (unsigned char*)malloc(size);
             fread(buf, size, 1, file);
 
             int bytes = llwrite(buf, size);
             printf("%i bytes written", bytes);    // only for debugging
 
+            free(buf);
         } else {  // enumRole == LlRx
 
         unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);

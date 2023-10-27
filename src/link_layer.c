@@ -33,6 +33,7 @@ int llopen(LinkLayer connectionParameters)
     int result;
 
     fd = makeConnection(connectionParameters.serialPort);
+    retransmissions = connectionParameters.nRetransmissions;
 
     if (fd < 0)
       return -1;
@@ -94,7 +95,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     while (alarmCount < retransmissions && !accepted && !rejected)
     {
         int bytes = write(fd, I_buf, size_I_buf);
-        printf("%d bytes written\n", bytes);
+        printf("%d anything\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
@@ -126,6 +127,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     }
 
     free(I_buf);
+    printf("accepted: %d\n", accepted);
     if (accepted)
         return size_I_buf;
     else {

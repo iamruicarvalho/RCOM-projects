@@ -40,7 +40,7 @@ int linkTx(LinkLayer connection) {
     // Set alarm function handler
     (void) signal(SIGALRM, alarmHandler);
 
-    while (alarmCount < connection.nRetransmissions && LINKED == FALSE)
+    while (alarmCount < connection.nRetransmissions && STOP == FALSE)
     {
         // send SET buffer
         int bytes = sendSupervisionFrame(A_SET, C_SET);
@@ -83,11 +83,11 @@ int linkTx(LinkLayer connection) {
 
                     case FLAG:
                         if (state == BCC1_UA) {
-                            LINKED = TRUE;
+                            STOP = TRUE;
                             state = START;
                             result = 1;
 
-                            printf("Successful reception\n");
+                            // printf("Successful reception\n");
                             alarm(0);   // alarm is disabled
 
                             /*int bytes = write(fd, SET, 5);
