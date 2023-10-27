@@ -14,7 +14,6 @@ int timeout = 0;
 int retransmissions = 0;
 unsigned char tramaTx = 0;
 unsigned char tramaRx = 1;
-const char* serialPort;
 unsigned char START = 0xFF;
 int fd;
 
@@ -30,11 +29,8 @@ int fd;
 // LLOPEN
 ////////////////////#include <termios.h>////////////////////////////
 int llopen(LinkLayer connectionParameters)
-{
+{    
     int result;
-    timeout = connectionParameters.timeout;
-    retransmissions = connectionParameters.nRetransmissions;
-    serialPort = connectionParameters.serialPort;
 
     fd = makeConnection(connectionParameters.serialPort);
     if (fd < 0)

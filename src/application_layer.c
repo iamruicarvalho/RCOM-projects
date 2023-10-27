@@ -13,10 +13,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         enumRole = LlRx;
     }
 
-    char *auxSerialPort = NULL;
-    strcpy(auxSerialPort, serialPort);
-
-    LinkLayer connectionParameters = {{(*auxSerialPort), enumRole, baudRate, nTries, timeout}};
+    LinkLayer connectionParameters;
+    strcpy(connectionParameters.serialPort,serialPort);
+    connectionParameters.role = enumRole;
+    connectionParameters.baudRate = baudRate;
+    connectionParameters.nRetransmissions = nTries;
+    connectionParameters.timeout = timeout;
 
     int openResult = llopen(connectionParameters);
 

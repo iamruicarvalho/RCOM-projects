@@ -19,7 +19,7 @@ extern int timeout;
 extern int retransmissions;
 extern unsigned char tramaTx;
 extern unsigned char tramaRx;
-extern const char* serialPort;
+extern const char* serialPort[50];
 extern unsigned char START;
 extern int fd;
 
@@ -188,10 +188,12 @@ int sendSupervisionFrame(unsigned char A, unsigned char C) {
     return write(fd, buf, 5);
 }
 
-int makeConnection(const char* serialPort) {
+int makeConnection(char* serialPort) {
     // Open serial port device for reading and writing, and not as controlling tty
     // because we don't want to get killed if linenoise sends CTRL-C.
+    
     fd = open(serialPort, O_RDWR | O_NOCTTY);
+    printf("fd: %i, serialPort: %s\n", fd, serialPort);
 
     if (fd < 0)
     {

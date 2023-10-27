@@ -9,7 +9,7 @@
       "stopAtEntry": false,
       "externalConsole": true,
       "cwd": "c:/RCOM/project/Data-Link-Protocol",
-      "program": "c:/RCOM/project/Data-Link-Protocol/build/Debug/outDebug",
+      "program": "c:/RCOM/project/Data-Link-Protocol/build/Release/outRelease",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
