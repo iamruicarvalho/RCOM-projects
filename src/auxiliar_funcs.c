@@ -1,4 +1,6 @@
 #include "auxiliar_funcs.h"
+#include "link_layer.h"
+#include "application_layer.h"
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>

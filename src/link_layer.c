@@ -4,19 +4,19 @@
 
 #include "auxiliar_funcs.h"
 #include "link_layer.h"
+#include "application_layer.h"
 
-extern volatile int STOP;
-extern volatile int LINKED;
-extern int alarmEnabled;
-extern int alarmCount;
-extern int timeout;
-extern int retransmissions;
-extern unsigned char tramaTx;
-extern unsigned char tramaRx;
-extern const char* serialPort;
-extern unsigned char START;
-extern int fd;
-
+volatile int STOP = FALSE;
+volatile int LINKED = FALSE;
+int alarmEnabled = FALSE;
+int alarmCount = 0;
+int timeout = 0;
+int retransmissions = 0;
+unsigned char tramaTx = 0;
+unsigned char tramaRx = 1;
+const char* serialPort;
+unsigned char START = 0xFF;
+int fd;
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -24,7 +24,6 @@ extern int fd;
 #define _POSIX_SOURCE 1 // POSIX compliant source
 
 #define BUF_SIZE 256
-
 
 
 ////////////////////////////////////////////////

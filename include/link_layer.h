@@ -27,18 +27,6 @@ typedef struct
 #define FALSE 0
 #define TRUE 1
 
-extern volatile int STOP;
-extern volatile int LINKED;
-extern int alarmEnabled;
-extern int alarmCount;
-extern int timeout;
-extern int retransmissions;
-extern unsigned char tramaTx;
-extern unsigned char tramaRx;
-extern const char* serialPort;
-extern unsigned char START;
-extern int fd;
-
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return "1" on success or "-1" on error.
 int llopen(LinkLayer connectionParameters);
