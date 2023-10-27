@@ -33,6 +33,7 @@ int llopen(LinkLayer connectionParameters)
     int result;
 
     fd = makeConnection(connectionParameters.serialPort);
+
     if (fd < 0)
       return -1;
 

@@ -21,6 +21,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     connectionParameters.timeout = timeout;
 
     int openResult = llopen(connectionParameters);
+    printf("Connection established\n");
 
     if (openResult == 1) {
         FILE* file;
@@ -42,39 +43,39 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
         } else {  // enumRole == LlRx
 
-          unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
-          int packetSize = -1;
-          while ((packetSize = llread(packet)) < 0);
-          unsigned long int rxFileSize = 0;
-          unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize);
+        unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
+        int packetSize = -1;
+        while ((packetSize = llread(packet)) < 0);
+        printf("Checkpoint \n");
+        unsigned long int rxFileSize = 0;
+        unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize);
 
-          FILE* newFile = fopen((char *) name, "wb+");
-          while (1) {
-              while ((packetSize = llread(packet)) < 0);
-              if(packetSize == 0) break;
-              else if(packet[0] != 3){
-                  unsigned char *buffer = (unsigned char*)malloc(packetSize);
-                  parseDataPacket(packet, packetSize, buffer);
-                  fwrite(buffer, sizeof(unsigned char), packetSize-4, newFile);
-                  free(buffer);
-              }
-              else continue;
-          }
-          printf("%i bytes read", packetSize);    // only for debugging
-
+        FILE* newFile = fopen((char*) name, "wb+");
+        while (1) {
+            while ((packetSize = llread(packet)) < 0);
+            if(packetSize == 0) break;
+            else if(packet[0] != 3){
+                unsigned char *buffer = (unsigned char*)malloc(packetSize);
+                parseDataPacket(packet, packetSize, buffer);
+                fwrite(buffer, sizeof(unsigned char), packetSize-4, newFile);
+                free(buffer);
+            }
+            else continue;
         }
+        printf("%i bytes read", packetSize);    // only for debugging
+    }
 
         int showStatistics = FALSE;
         int closeResult = llclose(showStatistics);
         fclose(file);
 
-        if (closeResult == 1) {
+        if (closeResult == 1) 
           printf("Connection closed successfuly");
-        }
+        
         else
           printf("An error occurred while closing the connection");
 
-    } else {
+    } else 
         printf("An error occurred in the linking process. Terminating the program");
-    }
+    
 }

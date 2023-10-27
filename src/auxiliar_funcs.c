@@ -111,8 +111,7 @@ int linkTx(LinkLayer connection) {
 
 int linkRx(LinkLayer connection) {
 
-    // Loop for input
-    unsigned char buf[1] = {0}; // +1: Save space for the final '\0' char
+    unsigned char buf;
     unsigned char state = START;
     int result = -1;
 
@@ -120,12 +119,12 @@ int linkRx(LinkLayer connection) {
     while (STOP == FALSE)
     {
         // Returns after 1 char has been input
-        int bytes = read(fd, buf, 1);
+        read(fd, &buf, 1);
 
-        printf("Message received: 0x%02X \n Bytes read:%d\n", buf[0], bytes);   // only for debugging
+        //printf("Message received: 0x%02X \n Bytes read:%d\n", buf, bytes);   // only for debugging
         //printf("buf = 0x%02X\n", (unsigned int)(buf & 0xFF));
 
-        switch (buf[0]) {
+        switch (buf) {
             case 0x03:  // can be A_SET or C_SET
               if (state == FLAG) {
                 state = A_SET;
@@ -151,12 +150,13 @@ int linkRx(LinkLayer connection) {
               if (state == BCC1_SET) {
                 STOP = TRUE;
                 state = START;
-                printf("Succesful reception of SET message");
+                //printf("Succesful reception of SET message");
                 result = 1;
 
                 // Sending the response (UA)
-                int bytes = sendSupervisionFrame(A_UA, C_UA);
-                printf("\n%d UA bytes written\n", bytes);
+                sendSupervisionFrame(A_UA, C_UA);
+                //printf("\n%d UA bytes written\n", bytes);
+                sleep(1);
               }
               else {
                 state = FLAG;
@@ -193,7 +193,6 @@ int makeConnection(char* serialPort) {
     // because we don't want to get killed if linenoise sends CTRL-C.
     
     fd = open(serialPort, O_RDWR | O_NOCTTY);
-    printf("fd: %i, serialPort: %s\n", fd, serialPort);
 
     if (fd < 0)
     {
@@ -240,7 +239,7 @@ int makeConnection(char* serialPort) {
         exit(-1);
     }
 
-    printf("New termios structure set\n");
+    //printf("New termios structure set\n");
 
     return fd;
 }
