@@ -22,9 +22,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     connectionParameters.timeout = timeout;
 
     int openResult = llopen(connectionParameters);
-    printf("Connection established\n");
+    if (openResult < 0) {
+        perror("Error: failed to establish connection. Terminating program.\n");
+        exit(-1);
+    }
+    else if (openResult == 1) {
 
-    if (openResult == 1) {
+        printf("Connection established\n");
         FILE* file;
 
         if (enumRole == LlTx) {
@@ -39,13 +43,19 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             /*unsigned char* buf = (unsigned char*)malloc(fileSize);
             fread(buf, fileSize, 1, file);*/
 
-            // cField (values: 2 – start; 3 – end)
-            unsigned int cpSize;
-            unsigned char *controlPacketStart = getControlPacket(2, filename, fileSize, &cpSize);
 
-            int startingBytes = llwrite(controlPacketStart, cpSize);
-            printf("Start control packet: %i bytes written", startingBytes);    // only for debugging
+            // cField (values: 2 – startPacket; 3 – endPacket)
+            unsigned int controlPacketSize;
+            unsigned char *controlPacketStart = getControlPacket(2, filename, fileSize, &controlPacketSize);
+            int startingBytes = llwrite(controlPacketStart, controlPacketSize);
 
+            if (startingBytes == -1){ 
+                printf("Error: could not send start packet\n");
+                exit(-1);
+            }
+            else
+                printf("Start control packet: %i bytes written", startingBytes);    
+                
             // unsigned char sequence = 0;
             // unsigned char* content = getData(file, fileSize);
             // long int bytesLeft = fileSize;
@@ -68,36 +78,46 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             //     sequence = (sequence + 1) % 255;   
             // }
 
-            // same thing as before but this time is to signal the end of the file transfer
-            // cField (values: 2 – start; 3 – end)
-            unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &cpSize);
-            int endingBytes = llwrite(controlPacketEnd, cpSize); 
+            // same thing as before but this time the first argument of the 
+            // getControlPacket function is to signal the end of the file transfer
+            unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
+            int endingBytes = llwrite(controlPacketEnd, controlPacketSize); 
+
+            if (endingBytes == -1){ 
+                printf("Error: could not send end packet\n");
+                exit(-1);
+            }
             printf("End control packet: %i bytes written", endingBytes);
             
-            llclose(fd);
+            llclose(openResult);
             // free(buf);
         }
         else {  // enumRole == LlRx
 
             unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
             int packetSize = -1;
+
             while ((packetSize = llread(packet)) < 0);
             printf("Checkpoint \n");
+
             unsigned long int rxFileSize = 0;
             unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize);
-
             FILE* newFile = fopen((char*) name, "wb+");
+
             while (1) {
                 while ((packetSize = llread(packet)) < 0);
-                if(packetSize == 0) break;
-                else if(packet[0] != 3){
+                if (packetSize == 0) 
+                    break;
+                else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet
                     unsigned char *buffer = (unsigned char*)malloc(packetSize);
                     parseDataPacket(packet, packetSize, buffer);
-                    fwrite(buffer, sizeof(unsigned char), packetSize-4, newFile);
+                    fwrite(buffer, sizeof(unsigned char), packetSize - 4, newFile);
                     free(buffer);
                 }
                 else continue;
             }
+
+            fclose(newFile);
             printf("%i bytes read", packetSize);    // only for debugging
         }
 
@@ -111,7 +131,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         else
           printf("An error occurred while closing the connection");
 
-    } else 
+    } 
+    else 
         printf("An error occurred in the linking process. Terminating the program");
-    
+        exit(-1);       // exit the program
 }
