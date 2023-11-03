@@ -19,7 +19,7 @@ extern int timeout;
 extern int retransmissions;
 extern unsigned char tramaTx;
 extern unsigned char tramaRx;
-extern const char* serialPort[50];
+// extern const char* serialPort[50];
 extern unsigned char START;
 extern int fd;
 
@@ -188,7 +188,7 @@ int sendSupervisionFrame(unsigned char A, unsigned char C) {
     return write(fd, buf, 5);
 }
 
-int makeConnection(char* serialPort) {
+int makeConnection(const char* serialPort) {
     // Open serial port device for reading and writing, and not as controlling tty
     // because we don't want to get killed if linenoise sends CTRL-C.
     
@@ -243,6 +243,29 @@ int makeConnection(char* serialPort) {
 
     return fd;
 }
+
+// unsigned char * getControlPacket(const unsigned int c, const char* filename, long int length, unsigned int* size){
+
+//     const int L1 = (int) ceil(log2f((float)length)/8.0);
+//     const int L2 = strlen(filename);
+//     *size = 1+2+L1+2+L2;
+//     unsigned char *packet = (unsigned char*)malloc(*size);
+    
+//     unsigned int pos = 0;
+//     packet[pos++]=c;
+//     packet[pos++]=0;
+//     packet[pos++]=L1;
+
+//     for (unsigned char i = 0 ; i < L1 ; i++) {
+//         packet[2+L1-i] = length & 0xFF;
+//         length >>= 8;
+//     }
+//     pos+=L1;
+//     packet[pos++]=1;
+//     packet[pos++]=L2;
+//     memcpy(packet+pos, filename, L2);
+//     return packet;
+// }
 
 unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize) {
 

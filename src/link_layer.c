@@ -14,6 +14,7 @@ int timeout = 0;
 int retransmissions = 0;
 unsigned char tramaTx = 0;
 unsigned char tramaRx = 1;
+// const char* serialPort[50];
 unsigned char START = 0xFF;
 int fd;
 

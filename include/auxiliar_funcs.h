@@ -46,7 +46,7 @@ typedef enum
 int linkTx(LinkLayer connection);
 int linkRx(LinkLayer connection);
 void alarmHandler(int signal);
-int makeConnection();
+int makeConnection(const char* serialPort);
 int sendSupervisionFrame(unsigned char A, unsigned char C);
 unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize);
 void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer);
