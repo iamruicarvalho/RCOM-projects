@@ -48,6 +48,8 @@ int linkRx(LinkLayer connection);
 void alarmHandler(int signal);
 int makeConnection(const char* serialPort);
 int sendSupervisionFrame(unsigned char A, unsigned char C);
+unsigned char* getControlPacket(const unsigned int c, const char* filename, long int length, unsigned int* size);
+unsigned char* getDataPacket(unsigned char sequence, unsigned char *data, int dataSize, int *packetSize);
 unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize);
 void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer);
 

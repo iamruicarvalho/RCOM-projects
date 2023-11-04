@@ -43,7 +43,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             /*unsigned char* buf = (unsigned char*)malloc(fileSize);
             fread(buf, fileSize, 1, file);*/
 
-
+            // signal the start of the transfer by sending the controlPacket
             // cField (values: 2 – startPacket; 3 – endPacket)
             unsigned int controlPacketSize;
             unsigned char *controlPacketStart = getControlPacket(2, filename, fileSize, &controlPacketSize);
@@ -78,8 +78,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             //     sequence = (sequence + 1) % 255;   
             // }
 
-            // same thing as before but this time the first argument of the 
-            // getControlPacket function is to signal the end of the file transfer
+            // signal the end of the transfer by sending the controlPacket again
             unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
             int endingBytes = llwrite(controlPacketEnd, controlPacketSize); 
 
@@ -95,9 +94,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         else {  // enumRole == LlRx
 
             unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
-            int packetSize = -1;
 
-            while ((packetSize = llread(packet)) < 0);
+            int packetSize = llread(packet);
+
+            while (packetSize < 0);
             printf("Checkpoint \n");
 
             unsigned long int rxFileSize = 0;
@@ -105,7 +105,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             FILE* newFile = fopen((char*) name, "wb+");
 
             while (1) {
-                while ((packetSize = llread(packet)) < 0);
+                packetSize = llread(packet);
+                while (packetSize < 0);
                 if (packetSize == 0) 
                     break;
                 else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet
@@ -134,5 +135,5 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     } 
     else 
         printf("An error occurred in the linking process. Terminating the program");
-        exit(-1);       // exit the program
+        exit(-1);       
 }

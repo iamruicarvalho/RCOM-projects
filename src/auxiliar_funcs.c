@@ -1,6 +1,7 @@
 #include "auxiliar_funcs.h"
 #include "link_layer.h"
 #include "application_layer.h"
+#include <math.h>
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -244,26 +245,40 @@ int makeConnection(const char* serialPort) {
     return fd;
 }
 
-// unsigned char * getControlPacket(const unsigned int c, const char* filename, long int length, unsigned int* size){
+unsigned char* getControlPacket(const unsigned int c, const char* filename, long int length, unsigned int* size) {
 
-//     const int L1 = (int) ceil(log2f((float)length)/8.0);
-//     const int L2 = strlen(filename);
-//     *size = 1+2+L1+2+L2;
-//     unsigned char *packet = (unsigned char*)malloc(*size);
+    const int L1 = (int) ceil(log2f((float)length)/8.0);
+    const int L2 = strlen(filename);
+    *size = 1 + 2 + L1 + 2 + L2;
+    unsigned char *controlPacket = (unsigned char*)malloc(*size);
     
-//     unsigned int pos = 0;
-//     packet[pos++]=c;
-//     packet[pos++]=0;
-//     packet[pos++]=L1;
+    unsigned int i = 0;
+    controlPacket[i++] = c;       // control field: 2 - start, 3 - end
+    controlPacket[i++] = 0;       // T: 0 - file size
+    controlPacket[i++] = L1;      // L
 
-//     for (unsigned char i = 0 ; i < L1 ; i++) {
-//         packet[2+L1-i] = length & 0xFF;
-//         length >>= 8;
-//     }
-//     pos+=L1;
-//     packet[pos++]=1;
-//     packet[pos++]=L2;
-//     memcpy(packet+pos, filename, L2);
+    for (unsigned char j = 0 ; j < L1 ; j++) {      // V
+        controlPacket[2 + L1 - j] = length & 0xFF;
+        length >>= 8;
+    }
+    i += L1;
+    controlPacket[i++] = 1;
+    controlPacket[i++] = L2;
+    memcpy(controlPacket + i, filename, L2);
+
+    return controlPacket;
+}
+
+// unsigned char* getDataPacket(unsigned char sequence, unsigned char *data, int dataSize, int *packetSize) {
+//     *packetSize = 1 + 1 + 2 + dataSize;
+//     unsigned char* packet = (unsigned char*)malloc(*packetSize);
+
+//     packet[0] = 1;   
+//     packet[1] = sequence;
+//     packet[2] = dataSize >> 8 & 0xFF;
+//     packet[3] = dataSize & 0xFF;
+//     memcpy(packet+4, data, dataSize);
+
 //     return packet;
 // }
 
@@ -272,18 +287,18 @@ unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long
     // File Size
     unsigned char fileSizeNBytes = packet[2];
     unsigned char fileSizeAux[fileSizeNBytes];
-    memcpy(fileSizeAux, packet+3, fileSizeNBytes);
-    for(unsigned int i = 0; i < fileSizeNBytes; i++)
-        *fileSize |= (fileSizeAux[fileSizeNBytes-i-1] << (8*i));
+    memcpy(fileSizeAux, packet + 3, fileSizeNBytes);
+    for (unsigned int i = 0; i < fileSizeNBytes; i++)
+        *fileSize |= (fileSizeAux[fileSizeNBytes - i - 1] << (8 * i));
 
     // File Name
-    unsigned char fileNameNBytes = packet[3+fileSizeNBytes+1];
+    unsigned char fileNameNBytes = packet[3 + fileSizeNBytes + 1];
     unsigned char *name = (unsigned char*)malloc(fileNameNBytes);
-    memcpy(name, packet+3+fileSizeNBytes+2, fileNameNBytes);
+    memcpy(name, packet + 3 + fileSizeNBytes + 2, fileNameNBytes);
     return name;
 }
 
 void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer) {
-    memcpy(buffer,packet+4,packetSize-4);
-    buffer += packetSize+4;
+    memcpy(buffer,packet + 4, packetSize - 4);
+    buffer += packetSize + 4;
 }
