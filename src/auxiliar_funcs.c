@@ -20,7 +20,6 @@ extern int timeout;
 extern int retransmissions;
 extern unsigned char tramaTx;
 extern unsigned char tramaRx;
-// extern const char* serialPort[50];
 extern unsigned char START;
 extern int fd;
 
@@ -298,7 +297,13 @@ unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long
     return name;
 }
 
-void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer) {
-    memcpy(buffer,packet + 4, packetSize - 4);
-    buffer += packetSize + 4;
-}
+// void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer) {
+//     memcpy(buffer, packet + 4, packetSize - 4);
+//     buffer += packetSize + 4;
+// }
+
+// unsigned char * getData(FILE* fd, long int fileLength) {
+//     unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * fileLength);
+//     fread(content, sizeof(unsigned char), fileLength, fd);
+//     return content;
+// }

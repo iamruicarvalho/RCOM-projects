@@ -52,5 +52,6 @@ unsigned char* getControlPacket(const unsigned int c, const char* filename, long
 unsigned char* getDataPacket(unsigned char sequence, unsigned char *data, int dataSize, int *packetSize);
 unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize);
 void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer);
+unsigned char* getData(FILE* fd, long int fileLength);
 
 #endif 
