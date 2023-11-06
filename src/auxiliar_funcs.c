@@ -42,8 +42,7 @@ int linkTx(LinkLayer connection) {
     while (alarmCount < connection.nRetransmissions && STOP == FALSE)
     {
         // send SET buffer
-        int bytes = sendSupervisionFrame(A_SET, C_SET);
-        printf("%d bytes written\n", bytes);
+        sendSupervisionFrame(A_SET, C_SET);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);

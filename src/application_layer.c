@@ -28,7 +28,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     }
     else if (openResult == 1) {
 
-        printf("Connection established\n");
+        printf("\nConnection established\n");
         FILE* file;
 
         if (enumRole == LlTx) {
