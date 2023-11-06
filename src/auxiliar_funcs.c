@@ -1,6 +1,6 @@
-#include "auxiliar_funcs.h"
 #include "link_layer.h"
 #include "application_layer.h"
+#include "auxiliar_funcs.h"
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -267,18 +267,18 @@ unsigned char* getControlPacket(const unsigned int c, const char* filename, long
     return controlPacket;
 }
 
-// unsigned char* getDataPacket(unsigned char sequence, unsigned char *data, int dataSize, int *packetSize) {
-//     *packetSize = 1 + 1 + 2 + dataSize;
-//     unsigned char* packet = (unsigned char*)malloc(*packetSize);
+unsigned char* getDataPacket(unsigned char sequence, unsigned char *data, int dataSize, int *packetSize) {
+    *packetSize = 1 + 1 + 2 + dataSize;
+    unsigned char* packet = (unsigned char*)malloc(*packetSize);
 
-//     packet[0] = 1;
-//     packet[1] = sequence;
-//     packet[2] = dataSize >> 8 & 0xFF;
-//     packet[3] = dataSize & 0xFF;
-//     memcpy(packet+4, data, dataSize);
+    packet[0] = 1;
+    packet[1] = sequence;
+    packet[2] = dataSize >> 8 & 0xFF;
+    packet[3] = dataSize & 0xFF;
+    memcpy(packet+4, data, dataSize);
 
-//     return packet;
-// }
+    return packet;
+}
 
 unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long int *fileSize) {
 
@@ -301,8 +301,8 @@ void parseDataPacket(const unsigned char* packet, const unsigned int packetSize,
     buffer += packetSize + 4;
 }
 
-// unsigned char * getData(FILE* fd, long int fileLength) {
-//     unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * fileLength);
-//     fread(content, sizeof(unsigned char), fileLength, fd);
-//     return content;
-// }
+unsigned char * getData(FILE* fd, long int fileLength) {
+    unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * fileLength);
+    fread(content, sizeof(unsigned char), fileLength, fd);
+    return content;
+}

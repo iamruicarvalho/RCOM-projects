@@ -91,6 +91,8 @@ int llwrite(const unsigned char *buf, int bufSize)
     int rejected = 0;
     STOP = FALSE;
     alarmCount = 0;
+    alarmEnabled = FALSE;
+
 
     while (alarmCount < retransmissions && !accepted && !rejected)
     {
@@ -99,6 +101,8 @@ int llwrite(const unsigned char *buf, int bufSize)
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
+        
+
         if (alarmEnabled == FALSE)
         {
             alarm(timeout); // Set alarm to be triggered in 3s
@@ -106,7 +110,6 @@ int llwrite(const unsigned char *buf, int bufSize)
 
             while (alarmEnabled == TRUE) {
                 int result = read(fd, data, 5);
-
                 if (!result)
                     continue;
 
