@@ -1,7 +1,6 @@
 #include "auxiliar_funcs.h"
 #include "link_layer.h"
 #include "application_layer.h"
-#include <math.h>
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -191,7 +190,7 @@ int sendSupervisionFrame(unsigned char A, unsigned char C) {
 int makeConnection(const char* serialPort) {
     // Open serial port device for reading and writing, and not as controlling tty
     // because we don't want to get killed if linenoise sends CTRL-C.
-    
+
     fd = open(serialPort, O_RDWR | O_NOCTTY);
 
     if (fd < 0)
@@ -250,7 +249,7 @@ unsigned char* getControlPacket(const unsigned int c, const char* filename, long
     const int L2 = strlen(filename);
     *size = 1 + 2 + L1 + 2 + L2;
     unsigned char *controlPacket = (unsigned char*)malloc(*size);
-    
+
     unsigned int i = 0;
     controlPacket[i++] = c;       // control field: 2 - start, 3 - end
     controlPacket[i++] = 0;       // T: 0 - file size
@@ -272,7 +271,7 @@ unsigned char* getControlPacket(const unsigned int c, const char* filename, long
 //     *packetSize = 1 + 1 + 2 + dataSize;
 //     unsigned char* packet = (unsigned char*)malloc(*packetSize);
 
-//     packet[0] = 1;   
+//     packet[0] = 1;
 //     packet[1] = sequence;
 //     packet[2] = dataSize >> 8 & 0xFF;
 //     packet[3] = dataSize & 0xFF;
@@ -297,10 +296,10 @@ unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long
     return name;
 }
 
-// void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer) {
-//     memcpy(buffer, packet + 4, packetSize - 4);
-//     buffer += packetSize + 4;
-// }
+void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer) {
+    memcpy(buffer, packet + 4, packetSize - 4);
+    buffer += packetSize + 4;
+}
 
 // unsigned char * getData(FILE* fd, long int fileLength) {
 //     unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * fileLength);

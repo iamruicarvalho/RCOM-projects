@@ -11,6 +11,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
+#include <math.h>
 
 #define FLAG       0x7E
 #define A_SET      0x03
@@ -54,4 +55,4 @@ unsigned char* parseControlPacket(unsigned char* packet, int size, unsigned long
 void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char* buffer);
 unsigned char* getData(FILE* fd, long int fileLength);
 
-#endif 
+#endif
