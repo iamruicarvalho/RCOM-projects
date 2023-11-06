@@ -34,60 +34,63 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         if (enumRole == LlTx) {
 
             file = fopen(filename,"rb");
-            size_t fileSize = sizeof(file);
             if (file == NULL) {
                 perror("File not found\n");
                 exit(-1);
             }
 
-            /*unsigned char* buf = (unsigned char*)malloc(fileSize);
-            fread(buf, fileSize, 1, file);*/
+            int prev = ftell(file);
+            fseek(file, 0L, SEEK_END);
+            long int fileSize = ftell(file)-prev;
+            fseek(file, prev, SEEK_SET);
+            // printf("file size: %li\n", fileSize); // file size: 10968
 
             // signal the start of the transfer by sending the controlPacket
             // cField (values: 2 – startPacket; 3 – endPacket)
             unsigned int controlPacketSize;
             unsigned char *controlPacketStart = getControlPacket(2, filename, fileSize, &controlPacketSize);
+            // printf("control packet size: %i\n", controlPacketSize);   // control packet size: 18
             int startingBytes = llwrite(controlPacketStart, controlPacketSize);
 
-            if (startingBytes == -1){ 
+            if (startingBytes == -1){
                 printf("Error: could not send start packet\n");
                 exit(-1);
             }
             else
-                printf("Start control packet: %i bytes written", startingBytes);    
-                
+                printf("Start control packet: %i bytes written", startingBytes);
+
             /*unsigned char sequence = 0;
             unsigned char* content = getData(file, fileSize);
             long int bytesLeft = fileSize;
 
-            while (bytesLeft >= 0) { 
+            while (bytesLeft >= 0) {
 
                 int dataSize = bytesLeft > (long int) MAX_PAYLOAD_SIZE ? MAX_PAYLOAD_SIZE : bytesLeft;
                 unsigned char* data = (unsigned char*) malloc(dataSize);
                 memcpy(data, content, dataSize);
                 int packetSize;
                 unsigned char* packet = getDataPacket(sequence, data, dataSize, &packetSize);
-                
+
                 if(llwrite(packet, packetSize) == -1) {
                     printf("Exit: error in data packets\n");
                     exit(-1);
                 }
-                
-                bytesLeft -= (long int) MAX_PAYLOAD_SIZE; 
-                content += dataSize; 
-                sequence = (sequence + 1) % 255;   
+
+                bytesLeft -= (long int) MAX_PAYLOAD_SIZE;
+                content += dataSize;
+                sequence = (sequence + 1) % 255;
             }*/
 
             // signal the end of the transfer by sending the controlPacket again
             unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
-            int endingBytes = llwrite(controlPacketEnd, controlPacketSize); 
+            int endingBytes = llwrite(controlPacketEnd, controlPacketSize);
 
-            if (endingBytes == -1){ 
+            if (endingBytes == -1){
                 printf("Error: could not send end packet\n");
                 exit(-1);
             }
             printf("End control packet: %i bytes written", endingBytes);
-            
+
             llclose(openResult);
         }
         else {  // enumRole == LlRx
@@ -106,7 +109,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             while (1) {
                 packetSize = llread(packet);
                 while (packetSize < 0);
-                if (packetSize == 0) 
+                if (packetSize == 0)
                     break;
                 else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet
                     unsigned char *buffer = (unsigned char*)malloc(packetSize);
@@ -125,15 +128,15 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         int closeResult = llclose(showStatistics);
         fclose(file);
 
-        if (closeResult == 1) 
+        if (closeResult == 1)
           printf("Connection closed successfuly");
-        
+
         else
           printf("An error occurred while closing the connection");
 
-    } 
+    }
     else {
         printf("An error occurred in the linking process. Terminating the program");
-        exit(-1);       
+        exit(-1);
     }
 }

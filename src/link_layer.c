@@ -29,7 +29,7 @@ int fd;
 // LLOPEN
 ////////////////////#include <termios.h>////////////////////////////
 int llopen(LinkLayer connectionParameters)
-{    
+{
     int result;
 
     fd = makeConnection(connectionParameters.serialPort);
@@ -95,7 +95,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     while (alarmCount < retransmissions && !accepted && !rejected)
     {
         int bytes = write(fd, I_buf, size_I_buf);
-        printf("%d anything\n", bytes);
+        printf("llwrite sent %d bytes\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
