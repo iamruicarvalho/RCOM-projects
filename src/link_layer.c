@@ -94,8 +94,8 @@ int llwrite(const unsigned char *buf, int bufSize)
 
     while (alarmCount < retransmissions && !accepted && !rejected)
     {
-        int bytes = write(fd, I_buf, size_I_buf);
-        printf("llwrite sent %d bytes\n", bytes);
+        write(fd, I_buf, size_I_buf);
+        //printf("llwrite sent %d bytes\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
@@ -108,7 +108,7 @@ int llwrite(const unsigned char *buf, int bufSize)
             while (alarmEnabled == TRUE) {
 
                 int result = read(fd, &data, 5);
-                printf("llwrite read %d bytes\n", result);
+                //printf("llwrite read %d bytes\n", result);
 
                 if (!result)
                     continue;
@@ -130,7 +130,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     }
 
     free(I_buf);
-    printf("accepted: %d\n", accepted);
+
     if (accepted)
         return size_I_buf;
     else {
@@ -243,7 +243,6 @@ int llclose(int showStatistics)
     unsigned char* DISC_buf;
     unsigned char state = START;
     int result = -1;
-
     // Set alarm function handler
     (void) signal(SIGALRM, alarmHandler);
 
@@ -255,11 +254,12 @@ int llclose(int showStatistics)
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
+        printf("alarmEnabled: %i\n", alarmEnabled);
         if (alarmEnabled == FALSE)
         {
             alarm(timeout); // Set alarm to be triggered in 3s
             alarmEnabled = TRUE;
-
+            STOP = FALSE;
             while (STOP == FALSE && alarmEnabled == TRUE) {
 
                 read(fd, &DISC_buf, 1);
@@ -290,7 +290,7 @@ int llclose(int showStatistics)
 
                     case FLAG:
                         if (state == BCC1_DISC) {
-                            LINKED = TRUE;
+                            STOP = TRUE;
                             state = START;
                             result = 1;
 

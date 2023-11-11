@@ -41,7 +41,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             int prev = ftell(file);
             fseek(file, 0L, SEEK_END);
-            long int fileSize = ftell(file)-prev;       
+            long int fileSize = ftell(file)-prev;
             fseek(file, prev, SEEK_SET);
             // printf("file size: %li\n", fileSize); // file size: 10968
 
@@ -57,7 +57,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 exit(-1);
             }
             else
-                printf("Start control packet: %i bytes written", startingBytes);
+                printf("Start control packet: %i bytes written\n", startingBytes);
 
             unsigned char sequence = 0;
             unsigned char* content = getData(file, fileSize);
@@ -70,7 +70,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 memcpy(data, content, dataSize);
                 int packetSize;
                 unsigned char* packet = getDataPacket(sequence, data, dataSize, &packetSize);
-
+                printf("packetSize: %i\n", packetSize);
                 if(llwrite(packet, packetSize) == -1) {
                     printf("Exit: error in data packets\n");
                     exit(-1);
@@ -89,7 +89,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("Error: could not send end packet\n");
                 exit(-1);
             }
-            printf("End control packet: %i bytes written", endingBytes);
+            printf("End control packet: %i bytes written\n", endingBytes);
 
             llclose(openResult);
         }
