@@ -302,6 +302,7 @@ int llclose(int showStatistics)
                         }
                         else
                             state = FLAG;
+
                         alarmCount = retransmissions;
                         break;
 
@@ -315,14 +316,14 @@ int llclose(int showStatistics)
     // send the UA buffer to the receiver
     sendSupervisionFrame(0x03, C_UA);
 
-    struct termios oldtio;
+    /*struct termios oldtio;
 
     // Restore the old port settings
     if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
     {
         perror("tcsetattr");
         exit(-1);
-    }
+    }*/
 
     sleep(1);
     close(fd);
