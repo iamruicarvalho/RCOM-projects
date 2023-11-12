@@ -97,7 +97,7 @@ int llwrite(const unsigned char *buf, int bufSize)
         //printf("llwrite sent %d bytes\n", bytes);
 
         // Wait until all bytes have been written to the serial port
-        sleep(1);
+        //sleep(1);
 
         if (alarmEnabled == FALSE)
         {
@@ -248,8 +248,8 @@ int llclose(int showStatistics)
     while (alarmCount < retransmissions)
     {
         // send DISC buffer
-        int bytes = sendSupervisionFrame(A_DISC, C_DISC);
-        printf("%d bytes written\n", bytes);
+        sendSupervisionFrame(A_DISC, C_DISC);
+        //printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
@@ -287,16 +287,10 @@ int llclose(int showStatistics)
 
                     case FLAG:
                         if (state == BCC1_DISC) {
-                            STOP = TRUE;    // this is probably useless
+                            STOP = TRUE;
                             state = START;
                             result = 1;
-
-                            printf("Successful reception\n");
-                            // printf("STOP = %d", STOP);
                             alarm(0);   // alarm is disabled
-
-                            /*int bytes = write(fd, SET, 5);
-                            printf("%d SET bytes written\n", bytes);*/
                         }
                         else
                             state = FLAG;

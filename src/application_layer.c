@@ -70,7 +70,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 memcpy(data, content, dataSize);
                 int packetSize;
                 unsigned char* packet = getDataPacket(sequence, data, dataSize, &packetSize);
-                printf("packetSize: %i\n", packetSize);
+                //printf("packetSize: %i\n", packetSize);
                 if(llwrite(packet, packetSize) == -1) {
                     printf("Exit: error in data packets\n");
                     exit(-1);
@@ -85,34 +85,39 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
             int endingBytes = llwrite(controlPacketEnd, controlPacketSize);
 
-            if (endingBytes == -1){
+            if (endingBytes == -1) {
                 printf("Error: could not send end packet\n");
                 exit(-1);
             }
             printf("End control packet: %i bytes written\n", endingBytes);
 
+            int showStatistics = FALSE;
+            int closeResult = llclose(showStatistics);
+            fclose(file);
+
+            if (closeResult == 1)
+              printf("Connection closed successfuly\n");
+
+            else
+              printf("An error occurred while closing the connection\n");
         }
         else {  // enumRole == LlRx
 
             unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
 
             int packetSize = llread(packet);
-
-            while (packetSize < 0);
             printf("packetSize read: %i\n", packetSize);
 
             unsigned long int rxFileSize = 0;
             unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize);
             FILE* newFile = fopen((char*) name, "wb+");
 
-            while (1) {
+            while (TRUE) {
                 while ((packetSize = llread(packet)) < 0);
-                // packetSize = llread(packet);
                 printf("packetSize read: %i\n", packetSize);
                 if (packetSize == 0)
                     break;
                 else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet
-                    printf("Checkpoint\n");     // there is a problem with the end control packet
                     unsigned char *buffer = (unsigned char*)malloc(packetSize);
                     parseDataPacket(packet, packetSize, buffer);
                     fwrite(buffer, sizeof(unsigned char), packetSize - 4, newFile);
@@ -122,17 +127,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             }
 
             fclose(newFile);
+            printf("Connection closed successfuly\n");
         }
-
-        int showStatistics = FALSE;
-        int closeResult = llclose(showStatistics);
-        fclose(file);
-
-        if (closeResult == 1)
-          printf("Connection closed successfuly\n");
-
-        else
-          printf("An error occurred while closing the connection\n");
 
     }
     else {
