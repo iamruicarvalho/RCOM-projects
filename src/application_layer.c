@@ -91,7 +91,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             }
             printf("End control packet: %i bytes written\n", endingBytes);
 
-            llclose(openResult);    // this point is reached correctly
         }
         else {  // enumRole == LlRx
 
@@ -130,14 +129,14 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         fclose(file);
 
         if (closeResult == 1)
-          printf("Connection closed successfuly");
+          printf("Connection closed successfuly\n");
 
         else
-          printf("An error occurred while closing the connection");
+          printf("An error occurred while closing the connection\n");
 
     }
     else {
-        printf("An error occurred in the linking process. Terminating the program");
+        printf("An error occurred in the linking process. Terminating the program\n");
         exit(-1);
     }
 }

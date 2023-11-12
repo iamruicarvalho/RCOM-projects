@@ -7,7 +7,6 @@
 #include "application_layer.h"
 
 volatile int STOP = FALSE;
-volatile int LINKED = FALSE;
 int alarmEnabled = FALSE;
 int alarmCount = 0;
 int timeout = 0;
@@ -261,10 +260,9 @@ int llclose(int showStatistics)
             STOP = FALSE;
             while (STOP == FALSE && alarmEnabled == TRUE) {
 
-                int bytes = read(fd, &DISC_buf, 1);
-                printf("Message received: 0x%02X \n Bytes read: %d\n", DISC_buf, bytes);
-                // printf("STOP = %d", STOP);
-                // state machine
+                read(fd, &DISC_buf, 1);
+                //printf("Message received: 0x%02X \n Bytes read: %d\n", DISC_buf, bytes);
+
                 switch(DISC_buf) {
                     case A_DISC:  // 0x03
                         if (state == FLAG)
@@ -316,14 +314,14 @@ int llclose(int showStatistics)
     // send the UA buffer to the receiver
     sendSupervisionFrame(0x03, C_UA);
 
-    /*struct termios oldtio;
-
-    // Restore the old port settings
-    if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
-    {
-        perror("tcsetattr");
-        exit(-1);
-    }*/
+    // struct termios oldtio;
+    //
+    // // Restore the old port settings
+    // if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+    // {
+    //     perror("tcsetattr");
+    //     exit(-1);
+    // }
 
     sleep(1);
     close(fd);
