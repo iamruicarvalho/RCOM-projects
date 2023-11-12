@@ -91,7 +91,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             }
             printf("End control packet: %i bytes written\n", endingBytes);
 
-            llclose(openResult);
+            llclose(openResult);    // this point is reached correctly
         }
         else {  // enumRole == LlRx
 

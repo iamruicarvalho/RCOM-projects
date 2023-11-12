@@ -249,7 +249,7 @@ int llclose(int showStatistics)
     while (alarmCount < retransmissions)
     {
         // send DISC buffer
-        int bytes = sendSupervisionFrame(A_DISC, A_DISC);
+        int bytes = sendSupervisionFrame(A_DISC, C_DISC);
         printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
@@ -263,7 +263,7 @@ int llclose(int showStatistics)
 
                 int bytes = read(fd, &DISC_buf, 1);
                 printf("Message received: 0x%02X \n Bytes read: %d\n", DISC_buf, bytes);
-
+                // printf("STOP = %d", STOP);
                 // state machine
                 switch(DISC_buf) {
                     case A_DISC:  // 0x03
@@ -294,6 +294,7 @@ int llclose(int showStatistics)
                             result = 1;
 
                             printf("Successful reception\n");
+                            // printf("STOP = %d", STOP);
                             alarm(0);   // alarm is disabled
 
                             /*int bytes = write(fd, SET, 5);
@@ -301,7 +302,9 @@ int llclose(int showStatistics)
                         }
                         else
                             state = FLAG;
+                        alarmCount = retransmissions;
                         break;
+
                     default:
                         state = START;
                 }
@@ -323,6 +326,5 @@ int llclose(int showStatistics)
 
     sleep(1);
     close(fd);
-
     return result;
 }
