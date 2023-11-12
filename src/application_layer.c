@@ -43,7 +43,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             fseek(file, 0L, SEEK_END);
             long int fileSize = ftell(file)-prev;
             fseek(file, prev, SEEK_SET);
-            printf("fileSize: %li\n", fileSize); // file size: 10968
+            //printf("fileSize: %li\n", fileSize); // file size: 10968
 
             // signal the start of the transfer by sending the controlPacket
             // cField (values: 2 – startPacket; 3 – endPacket)
@@ -62,7 +62,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             unsigned char sequence = 0;
             unsigned char* content = getData(file, fileSize);
             long int bytesLeft = fileSize;
-            printf("fileSize: %li\n", fileSize);
 
             while (bytesLeft >= 0) {
 
@@ -101,18 +100,20 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             int packetSize = llread(packet);
 
             while (packetSize < 0);
-            printf("Checkpoint \n");
+            printf("packetSize read: %i\n", packetSize);
 
             unsigned long int rxFileSize = 0;
             unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize);
             FILE* newFile = fopen((char*) name, "wb+");
 
             while (1) {
-                packetSize = llread(packet);
-                while (packetSize < 0);
+                while ((packetSize = llread(packet)) < 0);
+                // packetSize = llread(packet);
+                printf("packetSize read: %i\n", packetSize);
                 if (packetSize == 0)
                     break;
                 else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet
+                    printf("Checkpoint\n");     // there is a problem with the end control packet
                     unsigned char *buffer = (unsigned char*)malloc(packetSize);
                     parseDataPacket(packet, packetSize, buffer);
                     fwrite(buffer, sizeof(unsigned char), packetSize - 4, newFile);
@@ -122,7 +123,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             }
 
             fclose(newFile);
-            printf("%i bytes read", packetSize);    // only for debugging
         }
 
         int showStatistics = FALSE;
