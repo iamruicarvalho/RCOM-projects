@@ -43,7 +43,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             fseek(file, 0L, SEEK_END);
             long int fileSize = ftell(file)-prev;
             fseek(file, prev, SEEK_SET);
-            // printf("file size: %li\n", fileSize); // file size: 10968
+            printf("fileSize: %li\n", fileSize); // file size: 10968
 
             // signal the start of the transfer by sending the controlPacket
             // cField (values: 2 – startPacket; 3 – endPacket)
@@ -52,7 +52,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             // printf("control packet size: %i\n", controlPacketSize);   // control packet size: 18
             int startingBytes = llwrite(controlPacketStart, controlPacketSize);
 
-            if (startingBytes == -1){
+            if (startingBytes == -1) {
                 printf("Error: could not send start packet\n");
                 exit(-1);
             }
@@ -62,6 +62,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             unsigned char sequence = 0;
             unsigned char* content = getData(file, fileSize);
             long int bytesLeft = fileSize;
+            printf("fileSize: %li\n", fileSize);
 
             while (bytesLeft >= 0) {
 

@@ -240,7 +240,7 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
 {
-    unsigned char* DISC_buf;
+    unsigned char DISC_buf;
     unsigned char state = START;
     int result = -1;
     // Set alarm function handler
@@ -254,7 +254,6 @@ int llclose(int showStatistics)
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
-        printf("alarmEnabled: %i\n", alarmEnabled);
         if (alarmEnabled == FALSE)
         {
             alarm(timeout); // Set alarm to be triggered in 3s
@@ -262,11 +261,11 @@ int llclose(int showStatistics)
             STOP = FALSE;
             while (STOP == FALSE && alarmEnabled == TRUE) {
 
-                read(fd, &DISC_buf, 1);
-                // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
+                int bytes = read(fd, &DISC_buf, 1);
+                printf("Message received: 0x%02X \n Bytes read: %d\n", DISC_buf, bytes);
 
                 // state machine
-                switch(DISC_buf[0]) {
+                switch(DISC_buf) {
                     case A_DISC:  // 0x03
                         if (state == FLAG)
                             state = A_DISC;
@@ -290,7 +289,7 @@ int llclose(int showStatistics)
 
                     case FLAG:
                         if (state == BCC1_DISC) {
-                            STOP = TRUE;
+                            STOP = TRUE;    // this is probably useless
                             state = START;
                             result = 1;
 

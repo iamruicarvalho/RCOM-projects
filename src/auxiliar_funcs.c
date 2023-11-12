@@ -12,7 +12,6 @@
 #define BUF_SIZE 256
 
 extern volatile int STOP;
-extern volatile int LINKED;
 extern int alarmEnabled;
 extern int alarmCount;
 extern int timeout;
