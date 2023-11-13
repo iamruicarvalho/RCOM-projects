@@ -110,8 +110,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             //printf("packetSize read: %i\n", packetSize);
 
             unsigned long int rxFileSize = 0;
-            unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize);
-            FILE* newFile = fopen((char*) name, "wb+");
+            parseControlPacket(packet, packetSize, &rxFileSize);
+            FILE* newFile = fopen((char*) filename, "wb+");
 
             while (TRUE) {
                 while ((packetSize = llread(packet)) < 0);
