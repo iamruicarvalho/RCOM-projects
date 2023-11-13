@@ -80,6 +80,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 content += dataSize;
                 sequence = (sequence + 1) % 255;
             }
+            printf("Outside main llwrite\n");
 
             // signal the end of the transfer by sending the controlPacket again
             unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
@@ -115,7 +116,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             while (TRUE) {
                 while ((packetSize = llread(packet)) < 0);
-                //printf("packetSize read: %i\n", packetSize);
+                printf("packetSize read: %i\n", packetSize);
                 if (packetSize == 0)
                     break;
                 else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet

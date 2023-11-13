@@ -174,7 +174,7 @@ int linkRx(LinkLayer connection) {
 // Alarm function handler
 void alarmHandler(int signal)
 {
-    alarmEnabled = FALSE;
+    alarmEnabled = TRUE;
     alarmCount++;
 
     printf("Alarm #%d\n", alarmCount);
@@ -311,7 +311,8 @@ unsigned char readControlFrame() {
     LinkLayerState state = START_TX;
 
     while (state != STOP_R && alarmCount < retransmissions) {
-        if (read(fd, &byte, 1) > 0 || 1) {
+        if (read(fd, &byte, 1) > 0) {
+          printf("inside if\n");
             switch (state) {
                 case START_TX:
                     if (byte == FLAG) state = FLAG_RCV;

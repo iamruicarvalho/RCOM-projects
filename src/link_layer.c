@@ -83,48 +83,46 @@ int llwrite(const unsigned char *buf, int bufSize)
     I_buf[currPosition++] = FLAG;
     int size_I_buf = currPosition;
 
-    //unsigned char data[5] = {0};
     (void) signal(SIGALRM, alarmHandler);
 
-    int accepted = 0;
-    int rejected = 0;
+    int currentTransmition = 0;
+    int accepted;
+    int rejected;
     alarmCount = 0;
-    alarmEnabled = FALSE;
 
-    while (alarmCount < retransmissions && !accepted && !rejected) {
-        write(fd, I_buf, size_I_buf);
-        //printf("llwrite sent %d bytes\n", bytes);
+    while (currentTransmition < retransmissions) {
+      alarmEnabled = FALSE;
+      alarm(timeout);
+      rejected = 0;
+      accepted = 0;
+
+      while (alarmEnabled == FALSE && !rejected && !accepted) {
+        int bytes = write(fd, I_buf, size_I_buf);
+        printf("llwrite sent %d bytes\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
 
-        if (alarmEnabled == FALSE)
-        {
-            alarm(timeout);
-            alarmEnabled = TRUE;
+        unsigned char result = readControlFrame();
+        // printf("result: \n");
 
-            while (alarmEnabled == TRUE) {
+        if (!result)
+            continue;
 
-                int result = readControlFrame();
-                //printf("llwrite read %d bytes\n", result);
+        else if (result == C_REJ(0) || result == C_REJ(1)) // I frame rejected. need to read again
+            rejected = TRUE;
 
-                if (!result)
-                    continue;
-
-                else if (result == C_REJ(0) || result == C_REJ(1)) // I frame rejected. need to read again
-                    rejected = 1;
-
-                else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
-                    accepted = 1;
-                    tramaTx = (tramaTx+1) % 2;    // need to check this later
-                    alarmEnabled = FALSE;
-                }
-                else
-                    continue;
-            }
-            if (accepted)   // I frame sent correctly. we can get out of the while
-                break;
+        else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
+            accepted = TRUE;
+            tramaTx = (tramaTx+1) % 2;    // need to check this later
+            alarmEnabled = FALSE;
         }
+        else
+            continue;
+      }
+      printf("outside of main llwrite while\n");
+      if (accepted)   // I frame sent correctly. we can get out of the while
+          break;
     }
 
     free(I_buf);
@@ -147,7 +145,9 @@ int llread(unsigned char *packet)
     int i = 0;
 
     while (state != STOP_R) {
-        if (read(fd, &buf, 1)) {
+        //int bytes = read(fd, &buf, 1);
+        //printf("llread read %i bytes\n", bytes);
+        if (read(fd, &buf, 1) > 0) {
           switch (state) {
 
               case START_TX:
@@ -175,7 +175,7 @@ int llread(unsigned char *packet)
                       return 0;
                   }
                   else
-                      state = START;
+                      state = START_TX;
                   break;
 
               case C_RCV:
@@ -184,7 +184,7 @@ int llread(unsigned char *packet)
                   else if (buf == FLAG)
                       state = FLAG_RCV;
                   else
-                      state = START;
+                      state = START_TX;
                   break;
 
               case READING_DATA:
@@ -212,10 +212,9 @@ int llread(unsigned char *packet)
                       };
 
                   }
-                  else {
-                      packet[i++] = buf;
-                  }
-                  break;
+                    else
+                        packet[i++] = buf;
+                    break;
 
               case DATA_FOUND_ESC:
                   state = READING_DATA;
