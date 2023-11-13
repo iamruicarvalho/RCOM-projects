@@ -89,7 +89,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("Error: could not send end packet\n");
                 exit(-1);
             }
-            //printf("End control packet: %i bytes written\n", endingBytes);
+            printf("End control packet: %i bytes written\n", endingBytes);
 
             int showStatistics = FALSE;
             int closeResult = llclose(showStatistics);

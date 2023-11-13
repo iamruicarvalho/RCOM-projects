@@ -91,13 +91,12 @@ int llwrite(const unsigned char *buf, int bufSize)
     alarmCount = 0;
     alarmEnabled = FALSE;
 
-    while (alarmCount < retransmissions && !accepted && !rejected)
-    {
+    while (alarmCount < retransmissions && !accepted && !rejected) {
         write(fd, I_buf, size_I_buf);
         //printf("llwrite sent %d bytes\n", bytes);
 
         // Wait until all bytes have been written to the serial port
-        //sleep(1);
+        sleep(1);
 
         if (alarmEnabled == FALSE)
         {
@@ -299,15 +298,6 @@ int llclose(int showStatistics)
       if (state != STOP_R) return -1;
       // send the UA buffer to the receiver
       sendSupervisionFrame(0x03, C_UA);
-
-      // struct termios oldtio;
-      //
-      // // Restore the old port settings
-      // if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
-      // {
-      //     perror("tcsetattr");
-      //     exit(-1);
-      // }
       sleep(1);
 
       close(fd);
