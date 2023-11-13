@@ -47,7 +47,7 @@ int linkTx(LinkLayer connection) {
         sleep(1);
         if (alarmEnabled == FALSE)
         {
-            alarm(connection.timeout); // Set alarm to be triggered in 3s
+            alarm(connection.timeout); // Set alarm to be triggered in 4s
             alarmEnabled = TRUE;
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
@@ -174,7 +174,7 @@ int linkRx(LinkLayer connection) {
 // Alarm function handler
 void alarmHandler(int signal)
 {
-    alarmEnabled = TRUE;
+    alarmEnabled = FALSE;
     alarmCount++;
 
     printf("Alarm #%d\n", alarmCount);
@@ -217,7 +217,7 @@ int makeConnection(const char* serialPort) {
     // Set input mode (non-canonical, no echo,...)
     newtio.c_lflag = 0;
     newtio.c_cc[VTIME] = 0; // Inter-character timer unused
-    newtio.c_cc[VMIN] = 1;  // Blocking read until 1 char received
+    newtio.c_cc[VMIN] = 0;  // Blocking read until 1 char received
 
     // VTIME e VMIN should be changed in order to protect with a
     // timeout the reception of the following character(s)
@@ -310,9 +310,12 @@ unsigned char readControlFrame() {
     unsigned char byte, cField = 0;
     LinkLayerState state = START_TX;
 
-    while (state != STOP_R && alarmCount < retransmissions) {
-        if (read(fd, &byte, 1) > 0) {
-          printf("inside if\n");
+    while (state != STOP_R && alarmEnabled == FALSE) {
+      //printf("inside first if\n");
+      int bytes = read(fd, &byte, 1);
+      //printf("bytes: %i\n", bytes);
+        if (bytes > 0 || TRUE) {
+          //printf("inside second if\n");
             switch (state) {
                 case START_TX:
                     if (byte == FLAG) state = FLAG_RCV;

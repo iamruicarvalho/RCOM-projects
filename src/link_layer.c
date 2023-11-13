@@ -9,7 +9,7 @@
 volatile int STOP = FALSE;
 int alarmEnabled = FALSE;
 int alarmCount = 0;
-int timeout = 0;
+int timeout;
 int retransmissions = 0;
 unsigned char tramaTx = 0;
 unsigned char tramaRx = 1;
@@ -33,6 +33,7 @@ int llopen(LinkLayer connectionParameters)
 
     fd = makeConnection(connectionParameters.serialPort);
     retransmissions = connectionParameters.nRetransmissions;
+    timeout = connectionParameters.timeout;
 
     if (fd < 0)
       return -1;
@@ -104,7 +105,7 @@ int llwrite(const unsigned char *buf, int bufSize)
         sleep(1);
 
         unsigned char result = readControlFrame();
-        // printf("result: \n");
+        //printf("after readControlFrame: \n");
 
         if (!result)
             continue;
@@ -115,7 +116,7 @@ int llwrite(const unsigned char *buf, int bufSize)
         else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
             accepted = TRUE;
             tramaTx = (tramaTx+1) % 2;    // need to check this later
-            alarmEnabled = FALSE;
+            //alarmEnabled = FALSE;
         }
         else
             continue;
@@ -123,6 +124,7 @@ int llwrite(const unsigned char *buf, int bufSize)
       printf("outside of main llwrite while\n");
       if (accepted)   // I frame sent correctly. we can get out of the while
           break;
+      currentTransmition++;
     }
 
     free(I_buf);
@@ -148,6 +150,7 @@ int llread(unsigned char *packet)
         //int bytes = read(fd, &buf, 1);
         //printf("llread read %i bytes\n", bytes);
         if (read(fd, &buf, 1) > 0) {
+          printf("Message received: 0x%02X \n", buf);
           switch (state) {
 
               case START_TX:
