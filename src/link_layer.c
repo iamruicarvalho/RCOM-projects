@@ -53,36 +53,57 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    // prepare I frame to send
-    unsigned char* I_buf = (unsigned char*) malloc(bufSize + 6);
+    // // prepare I frame to send
+    // unsigned char* I_buf = (unsigned char*) malloc(bufSize + 6);
+    // I_buf[0] = FLAG;
+    // I_buf[1] = 0x03;
+    // I_buf[2] = C_N(tramaTx);
+    // I_buf[3] = I_buf[1] ^ I_buf[2];
+    //
+    // // data packet
+    // int currPosition = 4;
+    // for (int i = 0; i < bufSize; i++) {
+    //     if (buf[i] == FLAG) {
+    //         I_buf[currPosition++] = ESC;
+    //         I_buf[currPosition++] = 0x5E;
+    //     }
+    //     else if (buf[i] == ESC) {
+    //         I_buf[currPosition++] = ESC;
+    //         I_buf[currPosition++] = 0x5D;
+    //     }
+    //     else
+    //         I_buf[currPosition++] = buf[i];
+    // }
+    //
+    // // building BCC2: xor of all D's
+    // unsigned char BCC2 = buf[0];
+    // for (unsigned int i = 1 ; i < bufSize ; i++)
+    //     BCC2 ^= buf[i];
+    //
+    // I_buf[currPosition++] = BCC2;
+    // I_buf[currPosition++] = FLAG;
+    // int size_I_buf = currPosition;
+
+    int size_I_buf = 6+bufSize;
+    unsigned char *I_buf = (unsigned char *) malloc(size_I_buf);
     I_buf[0] = FLAG;
-    I_buf[1] = 0x03;
+    I_buf[1] = A_ER;
     I_buf[2] = C_N(tramaTx);
     I_buf[3] = I_buf[1] ^ I_buf[2];
-
-    // data packet
-    int currPosition = 4;
-    for (int i = 0; i < bufSize; i++) {
-        if (buf[i] == FLAG) {
-            I_buf[currPosition++] = ESC;
-            I_buf[currPosition++] = 0x5E;
-        }
-        else if (buf[i] == ESC) {
-            I_buf[currPosition++] = ESC;
-            I_buf[currPosition++] = 0x5D;
-        }
-        else
-            I_buf[currPosition++] = buf[i];
-    }
-
-    // building BCC2: xor of all D's
+    memcpy(I_buf+4,buf, bufSize);
     unsigned char BCC2 = buf[0];
-    for (unsigned int i = 1 ; i < bufSize ; i++)
-        BCC2 ^= buf[i];
+    for (unsigned int i = 1 ; i < bufSize ; i++) BCC2 ^= buf[i];
 
-    I_buf[currPosition++] = BCC2;
-    I_buf[currPosition++] = FLAG;
-    int size_I_buf = currPosition;
+    int j = 4;
+    for (unsigned int i = 0 ; i < bufSize ; i++) {
+        if(buf[i] == FLAG || buf[i] == ESC) {
+            I_buf = realloc(I_buf,++size_I_buf);
+            I_buf[j++] = ESC;
+        }
+        I_buf[j++] = buf[i];
+    }
+    I_buf[j++] = BCC2;
+    I_buf[j++] = FLAG;
 
     (void) signal(SIGALRM, alarmHandler);
 
