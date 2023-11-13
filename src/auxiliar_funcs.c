@@ -304,3 +304,45 @@ unsigned char * getData(FILE* fd, long int fileLength) {
     fread(content, sizeof(unsigned char), fileLength, fd);
     return content;
 }
+
+unsigned char readControlFrame() {
+
+    unsigned char byte, cField = 0;
+    LinkLayerState state = START_TX;
+
+    while (state != STOP_R && alarmCount < retransmissions) {
+        if (read(fd, &byte, 1) > 0 || 1) {
+            switch (state) {
+                case START_TX:
+                    if (byte == FLAG) state = FLAG_RCV;
+                    break;
+                case FLAG_RCV:
+                    if (byte == A_RE) state = A_RCV;
+                    else if (byte != FLAG) state = START_TX;
+                    break;
+                case A_RCV:
+                    if (byte == C_RR(0) || byte == C_RR(1) || byte == C_REJ(0) || byte == C_REJ(1) || byte == C_DISC){
+                        state = C_RCV;
+                        cField = byte;
+                    }
+                    else if (byte == FLAG) state = FLAG_RCV;
+                    else state = START_TX;
+                    break;
+                case C_RCV:
+                    if (byte == (A_RE ^ cField)) state = BCC1_OK;
+                    else if (byte == FLAG) state = FLAG_RCV;
+                    else state = START_TX;
+                    break;
+                case BCC1_OK:
+                    if (byte == FLAG){
+                        state = STOP_R;
+                    }
+                    else state = START_TX;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    return cField;
+}

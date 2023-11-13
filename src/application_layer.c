@@ -56,8 +56,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("Error: could not send start packet\n");
                 exit(-1);
             }
-            else
-                printf("Start control packet: %i bytes written\n", startingBytes);
+
+            //printf("Start control packet: %i bytes written\n", startingBytes);
 
             unsigned char sequence = 0;
             unsigned char* content = getData(file, fileSize);
@@ -89,14 +89,14 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("Error: could not send end packet\n");
                 exit(-1);
             }
-            printf("End control packet: %i bytes written\n", endingBytes);
+            //printf("End control packet: %i bytes written\n", endingBytes);
 
             int showStatistics = FALSE;
             int closeResult = llclose(showStatistics);
             fclose(file);
 
             if (closeResult == 1)
-              printf("Connection closed successfuly\n");
+              printf("File transferred correctly and connection closed successfuly\n");
 
             else
               printf("An error occurred while closing the connection\n");
@@ -105,8 +105,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
 
-            int packetSize = llread(packet);
-            printf("packetSize read: %i\n", packetSize);
+            int packetSize = -1;
+            while ((packetSize = llread(packet)) < 0);
+            //printf("packetSize read: %i\n", packetSize);
 
             unsigned long int rxFileSize = 0;
             unsigned char* name = parseControlPacket(packet, packetSize, &rxFileSize);
@@ -114,7 +115,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             while (TRUE) {
                 while ((packetSize = llread(packet)) < 0);
-                printf("packetSize read: %i\n", packetSize);
+                //printf("packetSize read: %i\n", packetSize);
                 if (packetSize == 0)
                     break;
                 else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet
@@ -127,7 +128,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             }
 
             fclose(newFile);
-            printf("Connection closed successfuly\n");
+            printf("File transferred correctly and connection closed successfuly\n");
         }
 
     }

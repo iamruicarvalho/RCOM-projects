@@ -83,7 +83,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     I_buf[currPosition++] = FLAG;
     int size_I_buf = currPosition;
 
-    unsigned char data[5] = {0};
+    //unsigned char data[5] = {0};
     (void) signal(SIGALRM, alarmHandler);
 
     int accepted = 0;
@@ -106,7 +106,7 @@ int llwrite(const unsigned char *buf, int bufSize)
 
             while (alarmEnabled == TRUE) {
 
-                int result = read(fd, &data, 5);
+                int result = readControlFrame();
                 //printf("llwrite read %d bytes\n", result);
 
                 if (!result)
@@ -148,86 +148,88 @@ int llread(unsigned char *packet)
     int i = 0;
 
     while (state != STOP_R) {
-        read(fd, &buf, 1);
-        switch (state) {
+        if (read(fd, &buf, 1)) {
+          switch (state) {
 
-            case START_TX:
-                if (buf == FLAG)
-                    state = FLAG_RCV;
-                break;
+              case START_TX:
+                  if (buf == FLAG)
+                      state = FLAG_RCV;
+                  break;
 
-            case FLAG_RCV:
-                if (buf == A_ER)
-                    state = A_RCV;
-                else if (buf != FLAG)
-                    state = START_TX;
-                break;
+              case FLAG_RCV:
+                  if (buf == A_ER)
+                      state = A_RCV;
+                  else if (buf != FLAG)
+                      state = START_TX;
+                  break;
 
-            case A_RCV:
-                if (buf == C_N(0) || buf == C_N(1)) {
-                    state = C_RCV;
-                    cField = buf;
-                }
-                else if (buf == FLAG)
-                    state = FLAG_RCV;
-                else if (buf == C_DISC) {
-                    sendSupervisionFrame(A_RE, C_DISC);
-                    return 0;
-                }
-                else
-                    state = START;
-                break;
+              case A_RCV:
+                  if (buf == C_N(0) || buf == C_N(1)) {
+                      state = C_RCV;
+                      cField = buf;
+                  }
+                  else if (buf == FLAG)
+                      state = FLAG_RCV;
+                  else if (buf == C_DISC) {
+                      sendSupervisionFrame(A_RE, C_DISC);
+                      //printf("Sent supervision frame\n");
+                      return 0;
+                  }
+                  else
+                      state = START;
+                  break;
 
-            case C_RCV:
-                if (buf == (A_ER ^ cField))
-                    state = READING_DATA;
-                else if (buf == FLAG)
-                    state = FLAG_RCV;
-                else
-                    state = START;
-                break;
+              case C_RCV:
+                  if (buf == (A_ER ^ cField))
+                      state = READING_DATA;
+                  else if (buf == FLAG)
+                      state = FLAG_RCV;
+                  else
+                      state = START;
+                  break;
 
-            case READING_DATA:
-                if (buf == ESC)
-                    state = DATA_FOUND_ESC;
-                else if (buf == FLAG) {
-                    unsigned char bcc2 = packet[i-1];
-                    i--;
-                    packet[i] = '\0';   // check if it is necessary
-                    unsigned char acc = packet[0];
+              case READING_DATA:
+                  if (buf == ESC)
+                      state = DATA_FOUND_ESC;
+                  else if (buf == FLAG) {
+                      unsigned char bcc2 = packet[i-1];
+                      i--;
+                      packet[i] = '\0';   // check if it is necessary
+                      unsigned char acc = packet[0];
 
-                    for (unsigned int j = 1; j < i; j++)
-                        acc ^= packet[j];
+                      for (unsigned int j = 1; j < i; j++)
+                          acc ^= packet[j];
 
-                    if (bcc2 == acc) {
-                        state = STOP_R;
-                        sendSupervisionFrame(A_RE, C_RR(tramaRx));
-                        tramaRx = (tramaRx + 1) % 2;
-                        return i;   // amount of bytes read
-                    }
-                    else {
-                        printf("An error ocurred, sending RREJ\n");
-                        sendSupervisionFrame(A_RE, C_REJ(tramaRx));
-                        return -1;
-                    };
+                      if (bcc2 == acc) {
+                          state = STOP_R;
+                          sendSupervisionFrame(A_RE, C_RR(tramaRx));
+                          tramaRx = (tramaRx + 1) % 2;
+                          return i;   // amount of bytes read
+                      }
+                      else {
+                          printf("An error ocurred, sending RREJ\n");
+                          sendSupervisionFrame(A_RE, C_REJ(tramaRx));
+                          return -1;
+                      };
 
-                }
-                else {
-                    packet[i++] = buf;
-                }
-                break;
+                  }
+                  else {
+                      packet[i++] = buf;
+                  }
+                  break;
 
-            case DATA_FOUND_ESC:
-                state = READING_DATA;
-                if (buf == ESC || buf == FLAG)
-                    packet[i++] = buf;
-                else {
-                    packet[i++] = ESC;
-                    packet[i++] = buf;
-                }
-                break;
-            default:
-                break;
+              case DATA_FOUND_ESC:
+                  state = READING_DATA;
+                  if (buf == ESC || buf == FLAG)
+                      packet[i++] = buf;
+                  else {
+                      packet[i++] = ESC;
+                      packet[i++] = buf;
+                  }
+                  break;
+              default:
+                  break;
+          }
         }
 
     }
@@ -239,85 +241,75 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose(int showStatistics)
 {
-    unsigned char DISC_buf;
-    unsigned char state = START;
-    int result = -1;
+    unsigned char byte;
+    LinkLayerState state = START_TX;
     // Set alarm function handler
     (void) signal(SIGALRM, alarmHandler);
 
-    while (alarmCount < retransmissions)
+    while (alarmCount < retransmissions && state != STOP_R)
     {
         // send DISC buffer
         sendSupervisionFrame(A_DISC, C_DISC);
+        alarm(timeout);
+        alarmEnabled = FALSE;
         //printf("%d bytes written\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
-        if (alarmEnabled == FALSE)
-        {
-            alarm(timeout); // Set alarm to be triggered in 3s
-            alarmEnabled = TRUE;
-            STOP = FALSE;
-            while (STOP == FALSE && alarmEnabled == TRUE) {
+        // if (alarmEnabled == FALSE)
+        // {
+        //     alarm(timeout); // Set alarm to be triggered in 3s
+        //     alarmEnabled = TRUE;
 
-                read(fd, &DISC_buf, 1);
-                //printf("Message received: 0x%02X \n Bytes read: %d\n", DISC_buf, bytes);
+            while (alarmEnabled == FALSE && state != STOP_R) {
 
-                switch(DISC_buf) {
-                    case A_DISC:  // 0x03
-                        if (state == FLAG)
-                            state = A_DISC;
-                        else
-                            state = START;
+                if (read(fd, &byte, 1)) {
+                  //printf("Message received: 0x%02X \n Bytes read: %d\n", DISC_buf, bytes);
+
+                  switch (state) {
+                    case START_TX:
+                        if (byte == FLAG) state = FLAG_RCV;
                         break;
-
-                    case C_DISC:  //0x0B
-                        if (state == A_DISC)
-                            state = C_DISC;
-                        else
-                            state = START;
+                    case FLAG_RCV:
+                        if (byte == A_RE) state = A_RCV;
+                        else if (byte != FLAG) state = START_TX;
                         break;
-
-                    case (BCC1_DISC):
-                        if (state == C_DISC)
-                            state = BCC1_DISC;
-                        else
-                            state = START;
+                    case A_RCV:
+                        if (byte == C_DISC) state = C_RCV;
+                        else if (byte == FLAG) state = FLAG_RCV;
+                        else state = START_TX;
                         break;
-
-                    case FLAG:
-                        if (state == BCC1_DISC) {
-                            STOP = TRUE;
-                            state = START;
-                            result = 1;
-                            alarm(0);   // alarm is disabled
-                        }
-                        else
-                            state = FLAG;
-
-                        alarmCount = retransmissions;
+                    case C_RCV:
+                        if (byte == (A_RE ^ C_DISC)) state = BCC1_OK;
+                        else if (byte == FLAG) state = FLAG_RCV;
+                        else state = START_TX;
                         break;
-
+                    case BCC1_OK:
+                        if (byte == FLAG) state = STOP_R;
+                        else state = START_TX;
+                        break;
                     default:
-                        state = START;
+                        break;
+                      }
                 }
             }
-        }
-    }
+            alarmCount++;
+      }
 
-    // send the UA buffer to the receiver
-    sendSupervisionFrame(0x03, C_UA);
+      if (state != STOP_R) return -1;
+      // send the UA buffer to the receiver
+      sendSupervisionFrame(0x03, C_UA);
 
-    // struct termios oldtio;
-    //
-    // // Restore the old port settings
-    // if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
-    // {
-    //     perror("tcsetattr");
-    //     exit(-1);
-    // }
+      // struct termios oldtio;
+      //
+      // // Restore the old port settings
+      // if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+      // {
+      //     perror("tcsetattr");
+      //     exit(-1);
+      // }
+      sleep(1);
 
-    sleep(1);
-    close(fd);
-    return result;
+      close(fd);
+      return 1;
 }
