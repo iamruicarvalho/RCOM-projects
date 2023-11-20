@@ -177,7 +177,7 @@ void alarmHandler(int signal)
     alarmEnabled = FALSE;
     alarmCount++;
 
-    printf("Alarm #%d\n", alarmCount);
+    printf("\nAlarm #%d\nStarting retransmission..\n\n", alarmCount);
 }
 
 int sendSupervisionFrame(unsigned char A, unsigned char C) {

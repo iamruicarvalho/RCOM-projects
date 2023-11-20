@@ -21,14 +21,15 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     connectionParameters.nRetransmissions = nTries;
     connectionParameters.timeout = timeout;
 
+    printf("\nEstablishing connection..\n");
     int openResult = llopen(connectionParameters);
     if (openResult < 0) {
-        perror("Error: failed to establish connection. Terminating program.\n");
+        perror("\nError: failed to establish connection. Terminating program.\n");
         exit(-1);
     }
     else if (openResult == 1) {
 
-        printf("\nConnection established\n");
+        printf("\nConnection established\n\nTransferring file..\n");
         FILE* file;
 
         if (enumRole == LlTx) {
@@ -41,9 +42,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             int prev = ftell(file);
             fseek(file, 0L, SEEK_END);
-            long int fileSize = ftell(file)-prev;
+            long int fileSize = ftell(file)-prev;   // file size: 10968
             fseek(file, prev, SEEK_SET);
-            //printf("fileSize: %li\n", fileSize); // file size: 10968
 
             // signal the start of the transfer by sending the controlPacket
             // cField (values: 2 – startPacket; 3 – endPacket)
@@ -57,8 +57,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 exit(-1);
             }
 
-            //printf("Start control packet: %i bytes written\n", startingBytes);
-
             unsigned char sequence = 0;
             unsigned char* content = getData(file, fileSize);
             long int bytesLeft = fileSize;
@@ -70,9 +68,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 memcpy(data, content, dataSize);
                 int packetSize;
                 unsigned char* packet = getDataPacket(sequence, data, dataSize, &packetSize);
-                //printf("packetSize: %i\n", packetSize);
+
                 if(llwrite(packet, packetSize) == -1) {
-                    printf("Exit: error in data packets\n");
+                    printf("\nError during data packets transmission. Terminating program.\n");
                     exit(-1);
                 }
 
@@ -80,7 +78,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 content += dataSize;
                 sequence = (sequence + 1) % 255;
             }
-            //printf("Outside main llwrite\n");
 
             // signal the end of the transfer by sending the controlPacket again
             unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
@@ -116,7 +113,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             while (TRUE) {
                 while ((packetSize = llread(packet)) < 0);
-                printf("packetSize read: %i\n", packetSize);
                 if (packetSize == 0)
                     break;
                 else if (packet[0] != 3) {      // if this is not the controlPacketEnd, we will process the control packet

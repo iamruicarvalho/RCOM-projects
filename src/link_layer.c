@@ -77,31 +77,25 @@ int llwrite(const unsigned char *buf, int bufSize)
     I_buf[j++] = BCC2;
     I_buf[j++] = FLAG;
 
-    (void) signal(SIGALRM, alarmHandler);
-
-    int currentTransmition = 0;
+    //int currentTransmition = 0;
     int accepted;
     int rejected;
     alarmCount = 0;
 
-    while (currentTransmition < retransmissions) {
+    while (alarmCount < retransmissions) {
       alarm(timeout);
       alarmEnabled = TRUE;
       rejected = 0;
       accepted = 0;
-      printf("currentTransmition: %i\n", currentTransmition);
 
       while (alarmEnabled == TRUE && !rejected && !accepted) {
-        //printf("Before write\n");
-        int bytes = write(fd, I_buf, size_I_buf);
-        printf("llwrite sent %d bytes\n", bytes);
+        write(fd, I_buf, size_I_buf);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
         //alarm(timeout);
         unsigned char result = readControlFrame();
         //alarm(0);
-        printf("result: %i\n", result);
 
         if (!result)
             continue;
@@ -112,15 +106,13 @@ int llwrite(const unsigned char *buf, int bufSize)
         else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
             accepted = TRUE;
             tramaTx = (tramaTx+1) % 2;    // need to check this later
-            //alarmEnabled = FALSE;
         }
         else
             continue;
       }
-      //printf("outside of main llwrite while\n");
+
       if (accepted)   // I frame sent correctly. we can get out of the while
           break;
-      currentTransmition++;
     }
 
     free(I_buf);

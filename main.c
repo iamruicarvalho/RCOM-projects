@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     const char *role = argv[2];
     const char *filename = argv[3];
 
-    printf("Starting link-layer protocol application\n"
+    printf("\nStarting link-layer protocol application\n"
            "  - Serial port: %s\n"
            "  - Role: %s\n"
            "  - Baudrate: %d\n"
