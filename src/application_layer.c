@@ -80,7 +80,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 content += dataSize;
                 sequence = (sequence + 1) % 255;
             }
-            printf("Outside main llwrite\n");
+            //printf("Outside main llwrite\n");
 
             // signal the end of the transfer by sending the controlPacket again
             unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
@@ -90,7 +90,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("Error: could not send end packet\n");
                 exit(-1);
             }
-            printf("End control packet: %i bytes written\n", endingBytes);
+            //printf("End control packet: %i bytes written\n", endingBytes);
 
             int showStatistics = FALSE;
             int closeResult = llclose(showStatistics);

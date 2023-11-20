@@ -85,20 +85,23 @@ int llwrite(const unsigned char *buf, int bufSize)
     alarmCount = 0;
 
     while (currentTransmition < retransmissions) {
-      alarmEnabled = FALSE;
       alarm(timeout);
+      alarmEnabled = TRUE;
       rejected = 0;
       accepted = 0;
+      printf("currentTransmition: %i\n", currentTransmition);
 
-      while (alarmEnabled == FALSE && !rejected && !accepted) {
+      while (alarmEnabled == TRUE && !rejected && !accepted) {
+        //printf("Before write\n");
         int bytes = write(fd, I_buf, size_I_buf);
         printf("llwrite sent %d bytes\n", bytes);
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
-
+        //alarm(timeout);
         unsigned char result = readControlFrame();
-        //printf("after readControlFrame: \n");
+        //alarm(0);
+        printf("result: %i\n", result);
 
         if (!result)
             continue;
@@ -114,7 +117,7 @@ int llwrite(const unsigned char *buf, int bufSize)
         else
             continue;
       }
-      printf("outside of main llwrite while\n");
+      //printf("outside of main llwrite while\n");
       if (accepted)   // I frame sent correctly. we can get out of the while
           break;
       currentTransmition++;
@@ -143,7 +146,7 @@ int llread(unsigned char *packet)
         //int bytes = read(fd, &buf, 1);
         //printf("llread read %i bytes\n", bytes);
         if (read(fd, &buf, 1) > 0) {
-          printf("Message received: 0x%02X \n", buf);
+          //printf("Message received: 0x%02X \n", buf);
           switch (state) {
 
               case START_TX:

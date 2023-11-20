@@ -310,12 +310,13 @@ unsigned char readControlFrame() {
     unsigned char byte, cField = 0;
     LinkLayerState state = START_TX;
 
-    while (state != STOP_R && alarmEnabled == FALSE) {
+    while (state != STOP_R && alarmEnabled == TRUE) {
       //printf("inside first if\n");
       int bytes = read(fd, &byte, 1);
       //printf("bytes: %i\n", bytes);
-        if (bytes > 0 || TRUE) {
+        if (bytes > 0) {
           //printf("inside second if\n");
+          //alarm(0);
             switch (state) {
                 case START_TX:
                     if (byte == FLAG) state = FLAG_RCV;
