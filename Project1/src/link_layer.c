@@ -1,6 +1,4 @@
 // Link layer protocol implementation
-// MISC
-#define _POSIX_SOURCE 1 // POSIX compliant source
 
 #include "auxiliar_funcs.h"
 #include "link_layer.h"
@@ -77,7 +75,6 @@ int llwrite(const unsigned char *buf, int bufSize)
     I_buf[j++] = BCC2;
     I_buf[j++] = FLAG;
 
-    //int currentTransmition = 0;
     int accepted;
     int rejected;
     alarmCount = 0;
@@ -93,25 +90,23 @@ int llwrite(const unsigned char *buf, int bufSize)
 
         // Wait until all bytes have been written to the serial port
         sleep(1);
-        //alarm(timeout);
         unsigned char result = readControlFrame();
-        //alarm(0);
 
         if (!result)
             continue;
 
-        else if (result == C_REJ(0) || result == C_REJ(1)) // I frame rejected. need to read again
+        else if (result == C_REJ(0) || result == C_REJ(1)) // I frame rejected, needs to read again
             rejected = TRUE;
 
         else if (result == C_RR(0) || result == C_RR(1)) { // I frame accepted
             accepted = TRUE;
-            tramaTx = (tramaTx+1) % 2;    // need to check this later
+            tramaTx = (tramaTx+1) % 2;   
         }
         else
             continue;
       }
 
-      if (accepted)   // I frame sent correctly. we can get out of the while
+      if (accepted)   // I frame sent correctly
           break;
     }
 
@@ -135,10 +130,7 @@ int llread(unsigned char *packet)
     int i = 0;
 
     while (state != STOP_R) {
-        //int bytes = read(fd, &buf, 1);
-        //printf("llread read %i bytes\n", bytes);
         if (read(fd, &buf, 1) > 0) {
-          //printf("Message received: 0x%02X \n", buf);
           switch (state) {
 
               case START_TX:
@@ -162,7 +154,6 @@ int llread(unsigned char *packet)
                       state = FLAG_RCV;
                   else if (buf == C_DISC) {
                       sendSupervisionFrame(A_RE, C_DISC);
-                      //printf("Sent supervision frame\n");
                       return 0;
                   }
                   else
@@ -184,7 +175,7 @@ int llread(unsigned char *packet)
                   else if (buf == FLAG) {
                       unsigned char bcc2 = packet[i-1];
                       i--;
-                      packet[i] = '\0';   // check if it is necessary
+                      packet[i] = '\0';  
                       unsigned char acc = packet[0];
 
                       for (unsigned int j = 1; j < i; j++)
@@ -232,30 +223,21 @@ int llclose(int showStatistics)
 {
     unsigned char byte;
     LinkLayerState state = START_TX;
-    // Set alarm function handler
+    
     (void) signal(SIGALRM, alarmHandler);
 
     while (alarmCount < retransmissions && state != STOP_R)
     {
-        // send DISC buffer
         sendSupervisionFrame(A_DISC, C_DISC);
         alarm(timeout);
         alarmEnabled = FALSE;
-        //printf("%d bytes written\n", bytes);
 
-        // Wait until all bytes have been written to the serial port
         sleep(1);
-        // if (alarmEnabled == FALSE)
-        // {
-        //     alarm(timeout); // Set alarm to be triggered in 3s
-        //     alarmEnabled = TRUE;
 
-            while (alarmEnabled == FALSE && state != STOP_R) {
+        while (alarmEnabled == FALSE && state != STOP_R) {
 
-                if (read(fd, &byte, 1)) {
-                  //printf("Message received: 0x%02X \n Bytes read: %d\n", DISC_buf, bytes);
-
-                  switch (state) {
+            if (read(fd, &byte, 1)) {
+                switch (state) {
                     case START_TX:
                         if (byte == FLAG) state = FLAG_RCV;
                         break;
@@ -279,13 +261,14 @@ int llclose(int showStatistics)
                         break;
                     default:
                         break;
-                      }
                 }
             }
-            alarmCount++;
+        }
+        alarmCount++;
       }
 
       if (state != STOP_R) return -1;
+
       // send the UA buffer to the receiver
       sendSupervisionFrame(0x03, C_UA);
       sleep(1);

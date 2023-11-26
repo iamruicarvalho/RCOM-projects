@@ -45,11 +45,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             long int fileSize = ftell(file)-prev;   // file size: 10968
             fseek(file, prev, SEEK_SET);
 
-            // signal the start of the transfer by sending the controlPacket
+            // signal the start of the transfer by sending a control packet
             // cField (values: 2 – startPacket; 3 – endPacket)
             unsigned int controlPacketSize;
-            unsigned char *controlPacketStart = getControlPacket(2, filename, fileSize, &controlPacketSize);
-            // printf("control packet size: %i\n", controlPacketSize);   // control packet size: 18
+            unsigned char *controlPacketStart = getControlPacket(2, filename, fileSize, &controlPacketSize);    // control packet size: 18
             int startingBytes = llwrite(controlPacketStart, controlPacketSize);
 
             if (startingBytes == -1) {
@@ -79,7 +78,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 sequence = (sequence + 1) % 255;
             }
 
-            // signal the end of the transfer by sending the controlPacket again
+            // signal the end of the transfer by sending a control packet again
             unsigned char *controlPacketEnd = getControlPacket(3, filename, fileSize, &controlPacketSize);
             int endingBytes = llwrite(controlPacketEnd, controlPacketSize);
 
@@ -87,7 +86,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("Error: could not send end packet\n");
                 exit(-1);
             }
-            //printf("End control packet: %i bytes written\n", endingBytes);
 
             int showStatistics = FALSE;
             int closeResult = llclose(showStatistics);
@@ -99,13 +97,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             else
               printf("An error occurred while closing the connection\n");
         }
+
         else {  // enumRole == LlRx
 
             unsigned char *packet = (unsigned char*)malloc(MAX_PAYLOAD_SIZE);
-
             int packetSize = -1;
             while ((packetSize = llread(packet)) < 0);
-            //printf("packetSize read: %i\n", packetSize);
 
             unsigned long int rxFileSize = 0;
             parseControlPacket(packet, packetSize, &rxFileSize);

@@ -23,11 +23,6 @@ extern int fd;
 
 int linkTx(LinkLayer connection) {
 
-    // In non-canonical mode, '\n' does not end the writing.
-    // Test this condition by placing a '\n' in the middle of the buffer.
-    // The whole buffer must be sent even with the '\n'.
-    // buf[5] = '\n';
-
     // UA buffer that is sent as an answer by the receiver
     unsigned char UA_buffer[1] = {0};
 
@@ -35,43 +30,38 @@ int linkTx(LinkLayer connection) {
 
     int result = -1;
 
-    // Set alarm function handler
     (void) signal(SIGALRM, alarmHandler);
 
     while (alarmCount < connection.nRetransmissions && STOP == FALSE)
     {
-        // send SET buffer
         sendSupervisionFrame(A_SET, C_SET);
-
-        // Wait until all bytes have been written to the serial port
         sleep(1);
+
         if (alarmEnabled == FALSE)
         {
-            alarm(connection.timeout); // Set alarm to be triggered in 4s
+            alarm(connection.timeout);      // Sets alarm to be triggered in 4s
             alarmEnabled = TRUE;
 
             while (STOP == FALSE && alarmEnabled == TRUE) {
 
                 read(fd, UA_buffer, 1);
-                // printf("Message received: 0x%02X \n Bytes read: %d\n", UA_buffer[0], bytes);
-
-                // state machine
+                
                 switch(UA_buffer[0]) {
-                    case A_UA:  // 0x01
+                    case A_UA: 
                         if (state == FLAG)
                             state = A_UA;
                         else
                             state = START;
                         break;
 
-                    case C_UA:  //0x07
+                    case C_UA: 
                         if (state == A_UA)
                             state = C_UA;
                         else
                             state = START;
                         break;
 
-                    case (BCC1_UA):  //0x01 ^ 0x07
+                    case (BCC1_UA): 
                         if (state == C_UA)
                             state = BCC1_UA;
                         else
@@ -84,11 +74,7 @@ int linkTx(LinkLayer connection) {
                             state = START;
                             result = 1;
 
-                            // printf("Successful reception\n");
                             alarm(0);   // alarm is disabled
-
-                            /*int bytes = write(fd, SET, 5);
-                            printf("%d SET bytes written\n", bytes);*/
                         }
                         else
                             state = FLAG;
@@ -112,17 +98,13 @@ int linkRx(LinkLayer connection) {
     unsigned char state = START;
     int result = -1;
 
-    // STATE MACHINE
     while (STOP == FALSE)
     {
         // Returns after 1 char has been input
         read(fd, &buf, 1);
 
-        //printf("Message received: 0x%02X \n Bytes read:%d\n", buf, bytes);   // only for debugging
-        //printf("buf = 0x%02X\n", (unsigned int)(buf & 0xFF));
-
         switch (buf) {
-            case 0x03:  // can be A_SET or C_SET
+            case 0x03:  
               if (state == FLAG) {
                 state = A_SET;
               }
@@ -147,12 +129,10 @@ int linkRx(LinkLayer connection) {
               if (state == BCC1_SET) {
                 STOP = TRUE;
                 state = START;
-                //printf("Succesful reception of SET message");
                 result = 1;
 
                 // Sending the response (UA)
                 sendSupervisionFrame(A_UA, C_UA);
-                //printf("\n%d UA bytes written\n", bytes);
                 sleep(1);
               }
               else {
@@ -166,10 +146,6 @@ int linkRx(LinkLayer connection) {
 
     return result;
 }
-
-// ----------------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------
 
 // Alarm function handler
 void alarmHandler(int signal)
@@ -311,12 +287,8 @@ unsigned char readControlFrame() {
     LinkLayerState state = START_TX;
 
     while (state != STOP_R && alarmEnabled == TRUE) {
-      //printf("inside first if\n");
-      int bytes = read(fd, &byte, 1);
-      //printf("bytes: %i\n", bytes);
+        int bytes = read(fd, &byte, 1);
         if (bytes > 0) {
-          //printf("inside second if\n");
-          //alarm(0);
             switch (state) {
                 case START_TX:
                     if (byte == FLAG) state = FLAG_RCV;
@@ -339,7 +311,7 @@ unsigned char readControlFrame() {
                     else state = START_TX;
                     break;
                 case BCC1_OK:
-                    if (byte == FLAG){
+                    if (byte == FLAG) {
                         state = STOP_R;
                     }
                     else state = START_TX;
