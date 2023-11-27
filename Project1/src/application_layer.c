@@ -3,10 +3,16 @@
 #include "application_layer.h"
 #include "auxiliar_funcs.h"
 #include "link_layer.h"
+#include <time.h>
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
+    clock_t start_t, end_t;
+    double total_t;
+
+    start_t = clock();
+
     LinkLayerRole enumRole;
     if (strcmp(role, "tx") == 0) {
         enumRole = LlTx;
@@ -123,6 +129,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             fclose(newFile);
             printf("File transferred correctly and connection closed successfuly\n");
+
+            end_t = clock();
+            total_t = (end_t - start_t) / CLOCKS_PER_SEC;
+            printf("time elapsed %f sec\n", total_t);
         }
 
     }
