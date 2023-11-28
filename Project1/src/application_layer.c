@@ -131,10 +131,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("File transferred correctly and connection closed successfuly\n");
 
             end_t = clock();
+            
             total_t = (end_t - start_t) / CLOCKS_PER_SEC;
             printf("time elapsed %f sec\n", total_t);
         }
-
     }
     else {
         printf("An error occurred in the linking process. Terminating the program\n");
