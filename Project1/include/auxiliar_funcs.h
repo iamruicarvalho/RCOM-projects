@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <math.h>
+#include <time.h>
 
 #define FLAG       0x7E
 #define A_SET      0x03

@@ -3,7 +3,6 @@
 #include "application_layer.h"
 #include "auxiliar_funcs.h"
 #include "link_layer.h"
-#include <time.h>
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
@@ -131,9 +130,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("File transferred correctly and connection closed successfuly\n");
 
             end_t = clock();
-            
-            total_t = (end_t - start_t) / CLOCKS_PER_SEC;
-            printf("time elapsed %f sec\n", total_t);
+
+            total_t = (end_t - start_t) / (float) CLOCKS_PER_SEC;
+            printf("Elapsed time: %f sec\n", total_t);
         }
     }
     else {
