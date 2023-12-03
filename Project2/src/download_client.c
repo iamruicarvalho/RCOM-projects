@@ -1,4 +1,4 @@
-#include "../include/download.h"
+#include "../include/download_client.h"
 
 int parse(char *input, struct URL *url) {
 
@@ -7,13 +7,13 @@ int parse(char *input, struct URL *url) {
     if (regexec(&regex, input, 0, NULL, 0)) return -1;
 
     regcomp(&regex, AT, 0);
-    if (regexec(&regex, input, 0, NULL, 0) != 0) { //ftp://<host>/<url-path>
-        
+    if (regexec(&regex, input, 0, NULL, 0) != 0) {    //ftp://<host>/<url-path>
+
         sscanf(input, HOST_REGEX, url->host);
         strcpy(url->user, DEFAULT_USER);
         strcpy(url->password, DEFAULT_PASSWORD);
 
-    } else { // ftp://[<user>:<password>@]<host>/<url-path>
+    } else {    // ftp://[<user>:<password>@]<host>/<url-path>
 
         sscanf(input, HOST_AT_REGEX, url->host);
         sscanf(input, USER_REGEX, url->user);
@@ -31,7 +31,7 @@ int parse(char *input, struct URL *url) {
     }
     strcpy(url->ip, inet_ntoa(*((struct in_addr *) h->h_addr)));
 
-    return !(strlen(url->host) && strlen(url->user) && 
+    return !(strlen(url->host) && strlen(url->user) &&
            strlen(url->password) && strlen(url->resource) && strlen(url->file));
 }
 
@@ -42,9 +42,9 @@ int createSocket(char *ip, int port) {
 
     bzero((char *) &server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(ip);  
-    server_addr.sin_port = htons(port); 
-    
+    server_addr.sin_addr.s_addr = inet_addr(ip);
+    server_addr.sin_port = htons(port);
+
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket()");
         exit(-1);
@@ -53,7 +53,7 @@ int createSocket(char *ip, int port) {
         perror("connect()");
         exit(-1);
     }
-    
+
     return sockfd;
 }
 
@@ -62,7 +62,7 @@ int authConn(const int socket, const char* user, const char* pass) {
     char userCommand[5+strlen(user)+1]; sprintf(userCommand, "user %s\n", user);
     char passCommand[5+strlen(pass)+1]; sprintf(passCommand, "pass %s\n", pass);
     char answer[MAX_LENGTH];
-    
+
     write(socket, userCommand, strlen(userCommand));
     if (readResponse(socket, answer) != SV_READY4PASS) {
         printf("Unknown user '%s'. Abort.\n", user);
@@ -95,7 +95,7 @@ int readResponse(const int socket, char* buffer) {
     memset(buffer, 0, MAX_LENGTH);
 
     while (state != END) {
-        
+
         read(socket, &byte, 1);
         switch (state) {
             case START:
@@ -155,7 +155,7 @@ int getResource(const int socketA, const int socketB, char *filename) {
 }
 
 int closeConnection(const int socketA, const int socketB) {
-    
+
     char answer[MAX_LENGTH];
     write(socketA, "quit\n", 5);
     if(readResponse(socketA, answer) != SV_GOODBYE) return -1;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
     if (argc != 2) {
         printf("Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>\n");
         exit(-1);
-    } 
+    }
 
     struct URL url;
     memset(&url, 0, sizeof(url));
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
         printf("Parse error. Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>\n");
         exit(-1);
     }
-    
+
     printf("Host: %s\nResource: %s\nFile: %s\nUser: %s\nPassword: %s\nIP Address: %s\n", url.host, url.resource, url.file, url.user, url.password, url.ip);
 
     char answer[MAX_LENGTH];
@@ -184,12 +184,12 @@ int main(int argc, char *argv[]) {
         printf("Socket to '%s' and port %d failed\n", url.ip, FTP_PORT);
         exit(-1);
     }
-    
+
     if (authConn(socketA, url.user, url.password) != SV_LOGINSUCCESS) {
         printf("Authentication failed with username = '%s' and password = '%s'.\n", url.user, url.password);
         exit(-1);
     }
-    
+
     int port;
     char ip[MAX_LENGTH];
     if (passiveMode(socketA, ip, &port) != SV_PASSIVE) {
