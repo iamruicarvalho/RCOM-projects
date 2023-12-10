@@ -50,9 +50,10 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    if (close(sockfd)<0) {
+    if (close(sockfd) < 0) {
         perror("close()");
         exit(-1);
     }
+
     return 0;
 }

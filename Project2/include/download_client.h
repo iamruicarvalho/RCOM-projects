@@ -1,11 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdlib.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <string.h>
 #include <regex.h>
 #include <termios.h>
 
@@ -54,7 +54,7 @@ typedef enum {
     END
 } ResponseState;
 
-/* 
+/*
 * Parser that transforms user input in url parameters
 * @param input, a string containing the user input
 * @param url, a struct that will be filled with the url parameters
@@ -62,7 +62,7 @@ typedef enum {
 */
 int parse(char *input, struct URL *url);
 
-/* 
+/*
 * Create socket file descriptor based on given server ip and port
 * @param ip, a string containing the server ip
 * @param port, an integer value containing the server port
@@ -70,16 +70,16 @@ int parse(char *input, struct URL *url);
 */
 int createSocket(char *ip, int port);
 
-/* 
+/*
 * Authenticate connection
 * @param socket, server connection file descriptor
 * @param user, a string containing the username
 * @param pass, a string containing the password
 * @return server response code obtained by the operation
 */
-int authConn(const int socket, const char *user, const char *pass);
+int authConnection(const int socket, const char *user, const char *pass);
 
-/* 
+/*
 * Read server response
 * @param socket, server connection file descriptor
 * @param buffer, string that will be filled with server response
@@ -87,7 +87,7 @@ int authConn(const int socket, const char *user, const char *pass);
 */
 int readResponse(const int socket, char *buffer);
 
-/* 
+/*
 * Enter in passive mode
 * @param socket, server connection file descriptor
 * @param ip, string that will be filled with data connection ip
@@ -96,7 +96,7 @@ int readResponse(const int socket, char *buffer);
 */
 int passiveMode(const int socket, char* ip, int *port);
 
-/* 
+/*
 * Request resource
 * @param socket, server connection file descriptor
 * @param resource, string that contains the desired resource
@@ -104,7 +104,7 @@ int passiveMode(const int socket, char* ip, int *port);
 */
 int requestResource(const int socket, char *resource);
 
-/* 
+/*
 * Get resource from server and download it in current directory
 * @param socketA, server connection file descriptor
 * @param socketB, server connection file descriptor
@@ -113,7 +113,7 @@ int requestResource(const int socket, char *resource);
 */
 int getResource(const int socketA, const int socketB, char *filename);
 
-/* 
+/*
 * Closes the server connection and the socket itself
 * @param socketA, server connection file descriptor
 * @param socketB, server connection file descriptor
