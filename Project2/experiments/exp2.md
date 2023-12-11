@@ -33,7 +33,7 @@ $ ifconfig eth0 172.16.41.1/24
 $ ping 172.16.40.254        #Tux44 -> ok
 $ ping 172.16.41.1          #Tux42 -> connect: Network is unreachable
 
-# 8. Start eth0 captures in Tux52, Tux53 and Tux54
+# 8. Start eth0 captures in Tux42, Tux43 and Tux44
 
 # 9. In TUX43 run this command and keep the results 
 $ ping -b 172.16.40.255 and then stop the captures
