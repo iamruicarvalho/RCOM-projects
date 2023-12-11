@@ -9,8 +9,24 @@
 #include <regex.h>
 #include <termios.h>
 
+#define AT  "@"
+#define BAR "/"
+
+/* Parser regular expressions */
+#define HOST_REGEX      "%*[^/]//%[^/]"
+#define HOST_AT_REGEX   "%*[^/]//%*[^@]@%[^/]"
+#define RESOURCE_REGEX  "%*[^/]//%*[^/]/%s"
+#define USER_REGEX      "%*[^/]//%[^:/]"
+#define PASS_REGEX      "%*[^/]//%*[^:]:%[^@\n$]"
+#define RESPCODE_REGEX  "%d"
+#define PASSIVE_REGEX   "%*[^(](%d,%d,%d,%d,%d,%d)%*[^\n$)]"
+
 #define MAX_LENGTH  500
 #define FTP_PORT    21
+
+/* Default login for case 'ftp://<host>/<url-path>' */
+#define DEFAULT_USER        "user"
+#define DEFAULT_PASSWORD    "password"
 
 /* Server responses */
 #define SV_READY4AUTH           220
@@ -20,21 +36,6 @@
 #define SV_READY4TRANSFER       150
 #define SV_TRANSFER_COMPLETE    226
 #define SV_GOODBYE              221
-
-/* Parser regular expressions */
-#define AT              "@"
-#define BAR             "/"
-#define HOST_REGEX      "%*[^/]//%[^/]"
-#define HOST_AT_REGEX   "%*[^/]//%*[^@]@%[^/]"
-#define RESOURCE_REGEX  "%*[^/]//%*[^/]/%s"
-#define USER_REGEX      "%*[^/]//%[^:/]"
-#define PASS_REGEX      "%*[^/]//%*[^:]:%[^@\n$]"
-#define RESPCODE_REGEX  "%d"
-#define PASSIVE_REGEX   "%*[^(](%d,%d,%d,%d,%d,%d)%*[^\n$)]"
-
-/* Default login for case 'ftp://<host>/<url-path>' */
-#define DEFAULT_USER        "anonymous"
-#define DEFAULT_PASSWORD    "password"
 
 /* Parser output */
 struct URL {

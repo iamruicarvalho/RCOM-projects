@@ -1,20 +1,18 @@
 #include "../include/download_client.h"
 
 int parseURL(char *input, struct URL *url) {
-
     regex_t regex;
     regcomp(&regex, BAR, 0);
+
     if (regexec(&regex, input, 0, NULL, 0)) return -1;
 
     regcomp(&regex, AT, 0);
     if (regexec(&regex, input, 0, NULL, 0) != 0) {    // ftp://<host>/<url-path>
-
         sscanf(input, HOST_REGEX, url->host);
         strcpy(url->user, DEFAULT_USER);
         strcpy(url->password, DEFAULT_PASSWORD);
 
     } else {    // ftp://[<user>:<password>@]<host>/<url-path>
-
         sscanf(input, HOST_AT_REGEX, url->host);
         sscanf(input, USER_REGEX, url->user);
         sscanf(input, PASS_REGEX, url->password);
@@ -59,13 +57,15 @@ int createSocket(char *ip, int port) {
 
 int authConnection(const int socket, const char* user, const char* pass) {
 
-    char userCommand[5+strlen(user)+1]; sprintf(userCommand, "user %s\n", user);
-    char passCommand[5+strlen(pass)+1]; sprintf(passCommand, "pass %s\n", pass);
-    char answer[MAX_LENGTH];
-
+    char userCommand[5+strlen(user)+1];
+    sprintf(userCommand, "user %s\n", user);
+    char passCommand[5+strlen(pass)+1];
+    sprintf(passCommand, "pass %s\n", pass);
     write(socket, userCommand, strlen(userCommand));
+
+    char answer[MAX_LENGTH];
     if (readResponse(socket, answer) != SV_READY4PASS) {
-        printf("Unknown user '%s'. Abort.\n", user);
+        printf("Unknown user '%s'. Ending connection.\n", user);
         exit(EXIT_FAILURE);
     }
 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     char answer[MAX_LENGTH];
     int socketA = createSocket(url.ip, FTP_PORT);
     if (socketA < 0 || readResponse(socketA, answer) != SV_READY4AUTH) {
-        printf("Socket to '%s' and port %d failed\n", url.ip, FTP_PORT);
+        printf("Socket to '%s' at port %d failed\n", url.ip, FTP_PORT);
         exit(EXIT_FAILURE);
     }
 
