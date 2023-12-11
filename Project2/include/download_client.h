@@ -25,7 +25,7 @@
 #define FTP_PORT    21
 
 /* Default login for case 'ftp://<host>/<url-path>' */
-#define DEFAULT_USER        "user"
+#define DEFAULT_USER        "anonymous"
 #define DEFAULT_PASSWORD    "password"
 
 /* Server responses */
