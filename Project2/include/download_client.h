@@ -39,8 +39,8 @@
 /* Parser output */
 struct URL {
     char host[MAX_LENGTH];      // 'ftp.up.pt'
-    char resource[MAX_LENGTH];  // 'parrot/misc/canary/warrant-canary-0.txt'
-    char file[MAX_LENGTH];      // 'warrant-canary-0.txt'
+    char resource[MAX_LENGTH];  // 'pub/kodi/timestamp.txt'
+    char file[MAX_LENGTH];      // 'timestamp.txt' = 1702304401
     char user[MAX_LENGTH];      // 'username'
     char password[MAX_LENGTH];  // 'password'
     char ip[MAX_LENGTH];        // 193.137.29.15
