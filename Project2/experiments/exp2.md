@@ -25,4 +25,19 @@ $ ifconfig eth0 172.16.41.1/24
 > /interface bridge port add bridge=bridge41 interface=ether3
 
 # 5. Check the added ports
-/interface bridge port print
+> /interface bridge port print
+
+# 6. Start the capture at tuxY3.eth0
+
+# 7. In tuxY3, ping tux44 and then ping tuxY2
+$ ping 172.16.40.254        #Tux44 -> ok
+$ ping 172.16.41.1          #Tux42 -> connect: Network is unreachable
+
+# 8. Start eth0 captures in Tux52, Tux53 and Tux54
+
+# 9. In TUX43 run this command and keep the results 
+$ ping -b 172.16.40.255 and then stop the captures
+
+# 10. In TUX42 run this command and keep the results 
+$ ping -b 172.16.41.255 and then stop the captures
+
