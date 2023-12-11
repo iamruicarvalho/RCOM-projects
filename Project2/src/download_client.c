@@ -1,13 +1,13 @@
 #include "../include/download_client.h"
 
-int parse(char *input, struct URL *url) {
+int parseURL(char *input, struct URL *url) {
 
     regex_t regex;
     regcomp(&regex, BAR, 0);
     if (regexec(&regex, input, 0, NULL, 0)) return -1;
 
     regcomp(&regex, AT, 0);
-    if (regexec(&regex, input, 0, NULL, 0) != 0) {    //ftp://<host>/<url-path>
+    if (regexec(&regex, input, 0, NULL, 0) != 0) {    // ftp://<host>/<url-path>
 
         sscanf(input, HOST_REGEX, url->host);
         strcpy(url->user, DEFAULT_USER);
@@ -27,7 +27,7 @@ int parse(char *input, struct URL *url) {
     if (strlen(url->host) == 0) return -1;
     if ((h = gethostbyname(url->host)) == NULL) {
         printf("Invalid hostname '%s'\n", url->host);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     strcpy(url->ip, inet_ntoa(*((struct in_addr *) h->h_addr)));
 
@@ -47,17 +47,17 @@ int createSocket(char *ip, int port) {
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket()");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     if (connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
         perror("connect()");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     return sockfd;
 }
 
-int authConn(const int socket, const char* user, const char* pass) {
+int authConnection(const int socket, const char* user, const char* pass) {
 
     char userCommand[5+strlen(user)+1]; sprintf(userCommand, "user %s\n", user);
     char passCommand[5+strlen(pass)+1]; sprintf(passCommand, "pass %s\n", pass);
@@ -66,7 +66,7 @@ int authConn(const int socket, const char* user, const char* pass) {
     write(socket, userCommand, strlen(userCommand));
     if (readResponse(socket, answer) != SV_READY4PASS) {
         printf("Unknown user '%s'. Abort.\n", user);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     write(socket, passCommand, strlen(passCommand));
@@ -140,7 +140,7 @@ int getResource(const int socketA, const int socketB, char *filename) {
     FILE *fd = fopen(filename, "wb");
     if (fd == NULL) {
         printf("Error opening or creating file '%s'\n", filename);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     char buffer[MAX_LENGTH];
@@ -166,14 +166,14 @@ int main(int argc, char *argv[]) {
 
     if (argc != 2) {
         printf("Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     struct URL url;
     memset(&url, 0, sizeof(url));
-    if (parse(argv[1], &url) != 0) {
-        printf("Parse error. Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>\n");
-        exit(-1);
+    if (parseURL(argv[1], &url) != 0) {
+        printf("URL parse error. Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>\n");
+        exit(EXIT_FAILURE);
     }
 
     printf("Host: %s\nResource: %s\nFile: %s\nUser: %s\nPassword: %s\nIP Address: %s\n", url.host, url.resource, url.file, url.user, url.password, url.ip);
@@ -182,40 +182,40 @@ int main(int argc, char *argv[]) {
     int socketA = createSocket(url.ip, FTP_PORT);
     if (socketA < 0 || readResponse(socketA, answer) != SV_READY4AUTH) {
         printf("Socket to '%s' and port %d failed\n", url.ip, FTP_PORT);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
-    if (authConn(socketA, url.user, url.password) != SV_LOGINSUCCESS) {
+    if (authConnection(socketA, url.user, url.password) != SV_LOGINSUCCESS) {
         printf("Authentication failed with username = '%s' and password = '%s'.\n", url.user, url.password);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     int port;
     char ip[MAX_LENGTH];
     if (passiveMode(socketA, ip, &port) != SV_PASSIVE) {
         printf("Passive mode failed\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     int socketB = createSocket(ip, port);
     if (socketB < 0) {
         printf("Socket to '%s:%d' failed\n", ip, port);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     if (requestResource(socketA, url.resource) != SV_READY4TRANSFER) {
         printf("Unknown resouce '%s' in '%s:%d'\n", url.resource, ip, port);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     if (getResource(socketA, socketB, url.file) != SV_TRANSFER_COMPLETE) {
         printf("Error transfering file '%s' from '%s:%d'\n", url.file, ip, port);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     if (closeConnection(socketA, socketB) != 0) {
-        printf("Sockets close error\n");
-        exit(-1);
+        printf("An error ocurred while closing the sockets\n");
+        exit(EXIT_FAILURE);
     }
 
     return 0;
